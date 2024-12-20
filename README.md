@@ -34,7 +34,7 @@ Ensure you have R version **4.4.1** installed. Open a new R session, then use `r
 renv::restore()
 ```
 
-This will install all the necessary R packages specified in the repository.
+This will install all the necessary R packages specified in the repository, and might take a while.
 
 ### 3. Prepare the Sample Information Sheet
 Create a sample information sheet in tab-delimited format with at least the following first three columns. Ensure that the first three column names are "sampleid", "condition", "secondary_output".
