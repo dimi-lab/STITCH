@@ -1,0 +1,22 @@
+*.Rproj
+.Rproj.user/
+.cache/
+.nextflow/
+flowchart.png
+.nextflow.*
+.Rhistory
+
+## test data
+output_*/
+testdata/
+tmp/
+work/
+
+## tools
+tools/
+repo/
+
+## metric
+report_*.html
+timeline_*.html
+trace_*.txt

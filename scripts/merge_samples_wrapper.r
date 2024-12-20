@@ -1,0 +1,84 @@
+library('optparse')
+option_list <- list(
+  make_option(c("--workflowpath"), type="character", default=NULL, 
+              help="workflow path. [default= %default]", metavar="character"),
+  make_option(c("--samplesheet"), type="character", default=NULL, 
+              help="sample sheet. [default= %default]", metavar="character"),
+  make_option(c("--data_type"), type="character", default=NULL, 
+              help="data type. [default= %default]", metavar="character"),
+  make_option(c("--resolution"), type="character", default=NULL, 
+              help="resolution. [default= %default]", metavar="character"),
+  make_option(c("--geneinfo"), type="character", default=NULL, 
+              help="gene info. [default= %default]", metavar="character"),
+  make_option(c("--cellcycle_correction_flag"), type="character", default=NULL, 
+              help="cellcycle correction flag. [default= %default]", metavar="character"),
+  make_option(c("--genelist_S_phase"), type="character", default=NULL, 
+              help="genelist S phase. [default= %default]", metavar="character"),
+  make_option(c("--genelist_G2M_phase"), type="character", default=NULL, 
+              help="genelist G2M phase. [default= %default]", metavar="character"),
+  make_option(c("--sketch_flag"), type="character", default=NULL, 
+              help="sketch flag. [default= %default]", metavar="character"),
+  make_option(c("--norm_dimreduc"), type="character", default=NULL, 
+              help="normalization method for dimension reduction. [default= %default]", metavar="character"),
+  make_option(c("--spatial_cluster"), type="character", default=NULL, 
+              help="Spatial clustering algorithm, Seurat or Banksy. [default= %default]", metavar="character"))
+
+opt_parser <- OptionParser(option_list=option_list)
+opt <- parse_args(opt_parser)
+
+options(stringsAsFactors = FALSE)
+
+for(i in c("resolution")) opt[[i]] <- as.numeric(opt[[i]])
+
+if(opt$data_type == 'scRNAseq') {
+  if(opt$sketch_flag == "0"){
+    command <- paste("Rscript", file.path(opt$workflowpath,"/scripts/merge_samples_scRNAseq.r"),
+                     "--samplesheet", opt$samplesheet,
+                     "--geneinfo", opt$geneinfo,
+                     "--resolution", opt$resolution,
+                     "--cellcycle_correction_flag", opt$cellcycle_correction_flag,
+                     "--genelist_S_phase", opt$genelist_S_phase,
+                     "--genelist_G2M_phase", opt$genelist_G2M_phase, 
+                     "--norm_dimreduc", opt$norm_dimreduc, sep = " "
+    )
+    system(command, wait = TRUE)
+  } else{
+    command <- paste("Rscript", file.path(opt$workflowpath,"/scripts/merge_samples_sketch_scRNAseq.r"),
+                     "--samplesheet", opt$samplesheet,
+                     "--geneinfo", opt$geneinfo,
+                     "--resolution", opt$resolution,
+                     "--cellcycle_correction", opt$cellcycle_correction,
+                     "--genelist_S_phase", opt$genelist_S_phase,
+                     "--genelist_G2M_phase", opt$genelist_G2M_phase, sep = " "
+    )
+    system(command, wait = TRUE)
+  }
+}
+
+if(opt$data_type == 'Visium') {
+  if(opt$sketch_flag == "0"){
+    command <- paste("Rscript", file.path(opt$workflowpath,"/scripts/merge_samples_Visium.r"),
+                     "--samplesheet", opt$samplesheet,
+                     "--geneinfo", opt$geneinfo,
+                     "--resolution", opt$resolution,
+                     "--cellcycle_correction_flag", opt$cellcycle_correction_flag,
+                     "--genelist_S_phase", opt$genelist_S_phase,
+                     "--genelist_G2M_phase", opt$genelist_G2M_phase, 
+                     "--norm_dimreduc", opt$norm_dimreduc, 
+                     "--spatial_cluster", opt$spatial_cluster, sep = " "
+    )
+    system(command, wait = TRUE)
+  } else{
+    command <- paste("Rscript", file.path(opt$workflowpath,"/scripts/merge_samples_sketch_Visium.r"),
+                     "--samplesheet", opt$samplesheet,
+                     "--geneinfo", opt$geneinfo,
+                     "--resolution", opt$resolution,
+                     "--cellcycle_correction", opt$cellcycle_correction,
+                     "--genelist_S_phase", opt$genelist_S_phase,
+                     "--genelist_G2M_phase", opt$genelist_G2M_phase, 
+                     "--norm_dimreduc", opt$norm_dimreduc, 
+                     "--spatial_cluster", opt$spatial_cluster, sep = " "
+    )
+    system(command, wait = TRUE)
+  }
+}

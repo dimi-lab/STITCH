@@ -1,0 +1,584 @@
+---
+title: "Summary report"
+author: authername
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output:
+  rmdformats::readthedown:
+    self_contained: true
+    thumbnails: false
+    lightbox: false
+    gallery: false
+    highlight: tango
+    code_folding: hide
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(message = FALSE, warning = FALSE, error = FALSE)
+```
+
+```{r load_library}
+renv::load(Sys.getenv("PROJECT_DIR"))
+library(reshape2)
+library(ggplot2)
+library(dplyr)
+library(grid)
+library(gridExtra)
+library(openxlsx)
+library(BPCells)
+library(Seurat)
+library(scplotter)
+library(ComplexHeatmap)
+library(RColorBrewer)
+library(patchwork)
+default_width <- 6
+default_height <- 6
+```
+
+# Sample information
+
+```{r data_load}
+opt <- params$opt
+sampleinfo <- read.delim(opt$samplesheet, header = T,check.names=F,stringsAsFactors=F)
+seurat_obj <- readRDS(opt$seurat_obj)
+DT::datatable(sampleinfo,rownames = F)
+```
+
+# Cluster summary {.tabset}
+
+## Number of cells per cluster
+
+```{r number_of_cells_table}
+cell_per_cluster <- as.data.frame(unclass(table(seurat_obj$seurat_clusters,seurat_obj$condition)))
+cell_per_cluster <- cbind(data.frame(cluster_number = rownames(cell_per_cluster)), cell_per_cluster)
+write.table(cell_per_cluster,file="./cellNumberbyClusterbyCondition.txt",row.names = F,col.names=T, sep="\t",quote=FALSE)
+cell_per_cluster_pct <- cell_per_cluster
+cell_per_cluster_pct[-1] <- sweep(cell_per_cluster_pct[-1],2,apply(cell_per_cluster_pct[-1], 2,sum),"/")
+write.table(cell_per_cluster_pct,file="./cellPctbyClusterbyCondition.txt",row.names = F,col.names=T, sep="\t",quote=FALSE)
+
+cell_per_cluster_bysample <- as.data.frame(unclass(table(seurat_obj$seurat_clusters,seurat_obj$sampleid)))
+cell_per_cluster_bysample <- cbind(data.frame(cluster_number = rownames(cell_per_cluster_bysample)), cell_per_cluster_bysample)
+write.table(cell_per_cluster_bysample,file="./cellNumberbyClusterbySampleid.txt",row.names = F,col.names=T, sep="\t",quote=FALSE)
+cell_per_cluster_bysample_pct <- cell_per_cluster_bysample
+cell_per_cluster_bysample_pct[-1] <- sweep(cell_per_cluster_bysample_pct[-1],2,apply(cell_per_cluster_bysample_pct[-1], 2,sum),"/")
+write.table(cell_per_cluster_bysample_pct,file="./cellPctbyClusterbySampleid.txt",row.names = F,col.names=T, sep="\t",quote=FALSE)
+
+DT::datatable(cell_per_cluster,rownames = F)
+```
+
+## Number of cells per cluster bar plot
+
+```{r number_of_cells_barplot}
+temp <- melt(table(seurat_obj$seurat_clusters,seurat_obj$condition))
+temp <- temp %>% group_by(Var2) %>% mutate(pct=value/sum(value))
+
+gp <- CellStatPlot(seurat_obj, group_by = "condition", palette = "Set2") + labs(x='cluster number', y='number of cells') + theme(axis.text = element_text(size=15), axis.title = element_text(size=18,face="bold"))
+
+ggsave('./numberofcellbarplot.png',gp,width=12,height=12, dpi = 300)
+ggsave('./numberofcellbarplot.pdf',gp,width=12,height=12, useDingbats=FALSE)
+gp
+```
+
+## Percentage of cells per cluster bar plot
+
+```{r number_of_cells_barplot_pct}
+gp <- CellStatPlot(seurat_obj, group_by = "condition", palette = "Set2", frac = "group") + labs(x='cluster number', y='percentage of cells') + theme(axis.text = element_text(size=15), axis.title = element_text(size=18,face="bold"))
+
+ggsave('./pctofcellbarplot.png',gp,width=12,height=12,dpi = 300)
+ggsave('./pctofcellbarplot.pdf',gp,width=12,height=12, useDingbats=F)
+gp
+```
+
+## Percentage of cells per cluster pie chart
+
+```{r, echo=FALSE}
+piechart_width <- 8*ceiling(length(unique(temp$Var2))/round(sqrt(length(unique(temp$Var2)))))
+piechart_height <- 6*round(sqrt(length(unique(temp$Var2))))
+```
+
+```{r number_of_cells_piechart_pct, fig.width=piechart_width, fig.height=piechart_height}
+gg_color <- function(n) {
+  hues = seq(15, 375, length = n + 1)
+  hcl(h = hues, l = 65, c = 100)[1:n]
+}
+
+cellpct_piechart <- function(){
+  par(mfrow=c(round(sqrt(length(unique(temp$Var2)))),ceiling(length(unique(temp$Var2))/round(sqrt(length(unique(temp$Var2)))))))
+for(i in unique(temp$Var2)){
+  pielabels <- sprintf("%s: %3.1f%s", paste0('cluster',temp$Var1[temp$Var2 == i]),100*temp$pct[temp$Var2 ==i], "%")  
+  pie(temp$pct[temp$Var2 ==i],
+      labels=pielabels,
+      clockwise=TRUE,
+      radius=1,
+      col=gg_color(18),
+      border="white",
+      cex=1,
+      main=i)
+}
+}
+
+png('./pctofcellpiechart.png',res = 300,width = piechart_width,units = 'in',height = piechart_height)
+cellpct_piechart()
+invisible(dev.off())
+
+pdf('./pctofcellpiechart.pdf',width =piechart_width ,height =piechart_height)
+cellpct_piechart()
+invisible(dev.off())
+
+## generate plot
+cellpct_piechart()
+par(mfrow = c(1,1))
+```
+
+# {-}
+
+# Dimensionality reduction visualization {.tabset}
+
+## Overall
+
+```{r dim_reduc_overall}
+if(opt$sketch_flag == "1") seurat_obj <- subset(seurat_obj, cells = colnames(seurat_obj@assays$sketch))
+p <- CellDimPlot(seurat_obj,group_by = "seurat_clusters", reduction = opt$vismethod, theme = "theme_blank", highlight =TRUE, label = TRUE, label_insitu = TRUE)
+ggsave(paste0('./',opt$vismethod,'.png'),p,width=6,height=5, dpi = 300)
+ggsave(paste0('./',opt$vismethod,'.pdf'),p,width=6,height=5, useDingbats=FALSE)
+p
+```
+
+## Split by sample
+
+```{r, echo=FALSE}
+nsamples <- length(unique(seurat_obj$sampleid))
+dimplot_width <- 6*round(sqrt(nsamples))
+dimplot_height <- 6*ceiling(nsamples/round(sqrt(nsamples)))
+```
+
+```{r dim_reduc_sample, fig.width=dimplot_width, fig.height=dimplot_height}
+p <- CellDimPlot(seurat_obj,group_by = "seurat_clusters", reduction = opt$vismethod, theme = "theme_blank", highlight =TRUE, label = TRUE, label_insitu = TRUE, split_by = "sampleid", ncol = round(sqrt(nsamples)))
+ggsave(paste0('./',opt$vismethod,'_split_sample.png'),p,width=dimplot_width,height=dimplot_height,limitsize = FALSE,dpi=300) 
+ggsave(paste0('./',opt$vismethod,'_split_sample.pdf'),p,width=dimplot_width,height=dimplot_height,limitsize = FALSE,useDingbats=FALSE)
+p
+```
+
+## Split by condition
+
+```{r, echo=FALSE}
+nconditions <- length(unique(seurat_obj$condition))
+dimplot_width_condition <- 6*round(sqrt(nconditions))
+dimplot_height_condition <- 6*ceiling(nconditions/round(sqrt(nconditions)))
+```
+
+```{r dim_reduc_condition, fig.width=dimplot_width_condition, fig.height=dimplot_height_condition}
+p <- CellDimPlot(seurat_obj,group_by = "seurat_clusters", reduction = opt$vismethod, theme = "theme_blank", highlight =TRUE, label = TRUE, label_insitu = TRUE, split_by = "condition", ncol = round(sqrt(nconditions)))
+ggsave(paste0("./",opt$vismethod,'_split_condition.png'),p,width=dimplot_width_condition,height=dimplot_height_condition,limitsize = FALSE,dpi=300) 
+ggsave(paste0("./",opt$vismethod,'_split_condition.pdf'),p,width=dimplot_width_condition,height=dimplot_height_condition,limitsize = FALSE,useDingbats=FALSE)
+p
+```
+
+```{r, echo=FALSE}
+if(opt$cellcycle_correction_flag =="1") cellcycle_correction_flag <- TRUE else {
+  cellcycle_correction_flag <- FALSE
+  dimplot_width_condition <- default_width
+  dimplot_height_condition <- default_height
+  }
+```
+
+## Cell cycle phase
+
+```{r dim_reduc_phase, fig.width=dimplot_width_condition, fig.height=dimplot_height_condition,eval=cellcycle_correction_flag, echo=cellcycle_correction_flag}
+p <- CellDimPlot(seurat_obj,group_by = "Phase", reduction = opt$vismethod, theme = "theme_blank", highlight =TRUE, label = TRUE, label_insitu = TRUE, split_by = "condition", ncol = round(sqrt(nconditions)))
+ggsave(paste0("./",opt$vismethod,'_cellcycle.png'),p,width=dimplot_width_condition,height=dimplot_height_condition,limitsize = FALSE,dpi=300) 
+ggsave(paste0("./",opt$vismethod,'_cellcycle.pdf'),p,width=dimplot_width_condition,height=dimplot_height_condition,limitsize = FALSE,useDingbats=FALSE)
+p
+```
+
+```{r, echo=FALSE}
+if(ncol(sampleinfo) >3){
+  for(i in 4:ncol(sampleinfo)){
+    p <- CellDimPlot(seurat_obj,group_by = colnames(sampleinfo)[i], reduction = opt$vismethod, theme = "theme_blank", highlight =TRUE, label = TRUE, label_insitu = TRUE)
+    ggsave(paste0("./",opt$vismethod,'_',colnames(sampleinfo)[i],'.png'),p,width=6,height=5,dpi = 300)
+    ggsave(paste0("./",opt$vismethod,'_',colnames(sampleinfo)[i],'.pdf'),p,width=6,height=5,useDingbats=F)
+  }
+}
+```
+
+# {-}
+
+# Feature genes {.tabset}
+
+## Feature gene expression
+
+```{r, echo=FALSE}
+if(file.exists(as.character(opt$feature_list))) genelist_flag <- TRUE else {
+  genelist_flag <- FALSE
+  featureplot_feature_width <- feature_gene_violin_width <- default_width
+  featureplot_feature_height <- feature_gene_violin_height <- default_height
+  }
+```
+
+```{r featureplot_feature, eval=genelist_flag, echo=genelist_flag, fig.show='hide'}
+genes <- read.delim(opt$feature_list, header=F,stringsAsFactors=F)
+genes <- genes$V1
+if(nconditions ==1){
+  p <- FeaturePlot(seurat_obj,features=genes,cols=c('grey','red'),combine = F,reduction = opt$vismethod, keep.scale = "feature", label = TRUE, pt.size = 2)
+  m <- grid.arrange(grobs=p,ncol=round(sqrt(length(p))),nrow=ceiling(length(p)/round(sqrt(length(p)))))
+  featureplot_feature_width <- 6*round(sqrt(length(p)))
+  featureplot_feature_height <- 6*ceiling(length(p)/round(sqrt(length(p))))
+} else {
+  m <- FeaturePlot(seurat_obj,features=genes,cols=c('grey','red'),combine = TRUE,reduction = opt$vismethod, keep.scale = "feature", split.by = "condition", label = TRUE,pt.size = 2) & theme(legend.position = "right")
+  featureplot_feature_width <- 6*nconditions
+  featureplot_feature_height <- 6*ceiling(length(p)/nconditions)
+}
+ggsave('./feature_gene.png',m,width=featureplot_feature_width,height=featureplot_feature_height,limitsize=F,dpi=300)
+ggsave('./feature_gene.pdf',m,width=featureplot_feature_width,height=featureplot_feature_height,useDingbats=F)
+```
+
+```{r featureplot_feature1, fig.width=featureplot_feature_width, fig.height=featureplot_feature_height, echo=FALSE, eval=genelist_flag}
+grid.draw(m)
+```
+
+## Feature gene expression violin plot
+
+```{r feature_gene_violin, eval=genelist_flag, echo=genelist_flag, fig.show='hide'}
+p <- VlnPlot(seurat_obj,features=genes,group.by='seurat_clusters',split.by='condition',pt.size=0,combine=F)
+m <- grid.arrange(grobs=p,ncol=round(sqrt(length(p))),nrow=ceiling(length(p)/round(sqrt(length(p)))))
+ggsave('./feature_gene_violin.png',m,width=12*round(sqrt(length(p))),height=6*ceiling(length(p)/round(sqrt(length(p)))),limitsize = F,dpi=300)  
+ggsave('./feature_gene_violin.pdf',m,width=12*round(sqrt(length(p))),height=6*ceiling(length(p)/round(sqrt(length(p)))),limitsize = F,useDingbats=F)
+feature_gene_violin_width <- 12*round(sqrt(length(p)))
+feature_gene_violin_height <- 6*ceiling(length(p)/round(sqrt(length(p))))
+```
+
+```{r feature_gene_violin1, fig.width=feature_gene_violin_width, fig.height=feature_gene_violin_height,echo=FALSE, eval=genelist_flag}
+grid.draw(m)
+```
+
+# {-}
+
+# Cluster specific genes {.tabset}
+
+## Number of marker genes
+
+```{r, echo=FALSE}
+if(opt$marker_gene_filtered != "NA") marker_flag <- TRUE else {
+  marker_flag <- FALSE
+  featureplot_width <- vlnplot_width <- default_width
+  featureplot_height <- vlnplot_height <- default_height
+  }
+```
+
+```{r num_marker_genes_barplot, eval=marker_flag, echo=marker_flag}
+marker_gene_file <- file.path(opt$marker_gene_filtered)
+selectedclusters <- getSheetNames(marker_gene_file)
+selectedclusters <- selectedclusters[-length(selectedclusters)]
+selectedclusters <- gsub("marker_gene_","",selectedclusters)
+cluster_list_filter <- lapply(1:length(selectedclusters), function(i) read.xlsx(marker_gene_file, sheet = i, rowNames = FALSE, colNames = TRUE))
+df <- data.frame(cluster=factor(selectedclusters, levels = selectedclusters),
+                 num=sapply(cluster_list_filter,function(i) nrow(i)))
+df$num[is.na(df$num)] <- 0
+gp <- ggplot(data=df) + geom_bar(aes(x=cluster,y=num,fill=cluster),position ='identity',stat='identity') +
+  theme_classic() + coord_flip() + guides(fill = FALSE) +
+  #scale_x_continuous(breaks = selectedclusters,labels = selectedclusters)+
+  scale_y_continuous(breaks=labeling::extended(range(df$num)[1],range(df$num)[2],4),labels = abs(labeling::extended(range(df$num)[1],range(df$num)[2],4))) +
+  labs(x='Cluster Number',y='Number of DEGs')
+ggsave('./marker_gene_barplot.png',gp,width=6,heigh=6,dpi=300)
+ggsave('./marker_gene_barplot.pdf',gp,width=6,heigh=6,useDingbats = F)
+gp
+```
+
+## Top cluster marker gene feature plot
+
+```{r marker_gene_featureplot, eval=marker_flag, echo=marker_flag, fig.show='hide'}
+#genelist_top1 <- sapply(1:length(selectedclusters), function(i) {cluster_list_filter[[i]]$gene_id[1]})
+genelist_top1_gs <- sapply(1:length(selectedclusters), function(i) {cluster_list_filter[[i]]$gene_name[1]})
+labels <- paste0(selectedclusters,':',genelist_top1_gs)
+labels <- labels[!is.na(genelist_top1_gs)]
+genelist_top1_gs <- genelist_top1_gs[!is.na(genelist_top1_gs)]
+#genelist_top1 <- genelist_top1[!is.na(genelist_top1)]
+p <- lapply(1:length(genelist_top1_gs), function(i) FeaturePlot(seurat_obj, features = genelist_top1_gs[i],cols=c('grey','red'),reduction = opt$vismethod, label = TRUE,pt.size = 2) + labs(title = labels[i]))
+m <- grid.arrange(grobs=p,ncol=round(sqrt(length(p))),nrow=ceiling(length(p)/round(sqrt(length(p)))))
+ggsave('./marker_gene.png',m,width=12*round(sqrt(length(p))),height=12*ceiling(length(p)/round(sqrt(length(p)))),limitsize = F,dpi=300)
+ggsave('./marker_gene.pdf',m,width=12*round(sqrt(length(p))),height=12*ceiling(length(p)/round(sqrt(length(p)))),limitsize = F,useDingbats=FALSE)
+marker_gene_featureplot_width <- 12*round(sqrt(length(p)))
+marker_gene_featureplot_height <- 12*ceiling(length(p)/round(sqrt(length(p))))
+```
+
+```{r marker_gene_featureplot1, fig.width=marker_gene_featureplot_width, fig.height=marker_gene_featureplot_height, eval=marker_flag, echo=FALSE}
+grid.draw(m)
+```
+
+## Top cluster marker gene dotplot
+
+```{r marker_gene_dotplot, eval=marker_flag, echo=marker_flag}
+# if(ncol(seurat_obj) >= 5000){
+#   set.seed(1234)
+#   cells_sel <- sapply(unique(seurat_obj$seurat_clusters), function(i){
+#     sample(colnames(seurat_obj)[seurat_obj$seurat_clusters ==i], max(1,round(5000*sum(seurat_obj$seurat_clusters ==i)/ncol(seurat_obj))))
+#   })
+#   seurat_obj_heatmap <- subset(seurat_obj, cells = unlist(cells_sel))
+# } else seurat_obj_heatmap <- seurat_obj
+#seurat_obj_heatmap <- ScaleData(seurat_obj_heatmap, features = rownames(seurat_obj_heatmap), verbose = FALSE)
+seurat_obj <- ScaleData(seurat_obj, features = rownames(seurat_obj), verbose = FALSE)
+
+rows_data <- data.frame(genes = genelist_top1_gs,
+                        clusters = gsub("cluster|:.*$","",labels))
+p <- FeatureStatPlot(seurat_obj, features = rows_data$genes, ident = "condition", cell_type = "dot", plot_type = "heatmap", name = "Expression Level", dot_size = function(x) sum(x > 0) / length(x), dot_size_name = "Percent Expressed", add_bg = FALSE, rows_data = rows_data, show_row_names = TRUE, rows_split_by = "clusters", cluster_rows = FALSE, cluster_columns = FALSE, row_name_annotation = TRUE, rows_split_palette = "Set2", columns_split_palette = "Set2", columns_split_by = "seurat_clusters", layer = "scale.data")
+ggsave('./marker_gene_dotplot.png',p,width=12,height=12, dpi = 300)
+ggsave('./marker_gene_dotplot.pdf',p,width=12,height=12, useDingbats=FALSE)
+p
+```
+
+## Top cluster marker gene violin plot
+
+```{r marker_gene_vlnplot, eval=marker_flag, echo=marker_flag,fig.show='hide'}
+p <- lapply(1:length(genelist_top1_gs), function(i) VlnPlot(seurat_obj,features=genelist_top1_gs[i],group.by='seurat_clusters',pt.size=0) + labs(title = labels[i]) + theme(legend.position = "none"))
+m <- grid.arrange(grobs=p,ncol=round(sqrt(length(p))),nrow=ceiling(length(p)/round(sqrt(length(p)))))
+ggsave('./marker_gene_violin.png',m,width=12*round(sqrt(length(p))),height=6*ceiling(length(p)/round(sqrt(length(p)))),limitsize = F,dpi=300)
+ggsave('./marker_gene_violin.pdf',m,width=12*round(sqrt(length(p))),height=6*ceiling(length(p)/round(sqrt(length(p)))),limitsize = F,useDingbats=FALSE)
+vlnplot_width <- 12*round(sqrt(length(p)))
+vlnplot_height <- 6*ceiling(length(p)/round(sqrt(length(p))))
+```
+
+```{r marker_gene_vlnplot1, fig.width=vlnplot_width, fig.height=vlnplot_height, eval=marker_flag, echo=FALSE}
+grid.draw(m)
+```
+
+## Top cluster marker gene heatmap
+
+```{r marker_gene_heatmap,eval=marker_flag, echo=marker_flag}
+# if(opt$sketch_flag == "1"){
+#   seurat_obj_heatmap[["RNA4"]] <- as(object = seurat_obj_heatmap[["RNA"]], Class = "Assay")
+#   assay <- "RNA4"
+# } else assay <- "SCT"
+#DoHeatmap(seurat_obj_heatmap, features = unique(genelist_top1_gs), size = 3,slot = 'scale.data',assay = 'SCT')
+p <- FeatureStatPlot(seurat_obj, features = rows_data$genes, ident = "condition", plot_type = "heatmap", name = "Expression Level", rows_data = rows_data, show_row_names = TRUE, rows_split_by = "clusters", cluster_rows = FALSE, row_name_annotation = TRUE, cluster_columns = FALSE, rows_split_palette = "Set2", columns_split_palette = "Set2", layer = "scale.data", columns_split_by = "seurat_clusters")
+# ht <- FeatureHeatmap(
+#   srt = seurat_obj_heatmap, group.by = "seurat_clusters",max_cells = max(table(seurat_obj_heatmap$seurat_clusters)),features = unique(genelist_top1_gs),assay = assay
+# )
+#ht$plot
+ggsave('./marker_gene_heatmap.png',p,width=8,height=12, dpi = 300)
+ggsave('./marker_gene_heatmap.pdf',p,width=8,height=12,useDingbats=FALSE)
+p
+```
+
+```{r figures_top5, echo=FALSE, eval=marker_flag, fig.show='hide'}
+#genelist_top5 <- lapply(1:length(selectedclusters), function(i) {cluster_list_filter[[i]]$gene_id[0:min(5,nrow(cluster_list_filter[[i]]))]})
+genelist_top5_gs <- lapply(1:length(selectedclusters), function(i) {
+  if(nrow(cluster_list_filter[[i]]) == 0) NA else cluster_list_filter[[i]]$gene_name[0:min(5,nrow(cluster_list_filter[[i]]))]
+  })
+labels_top5 <- lapply(1:length(selectedclusters),function(i) paste0( selectedclusters[i],':',genelist_top5_gs[[i]]))
+labels_top5 <- labels_top5[sapply(genelist_top5_gs,function(i) !any(is.na(i)))]
+genelist_top5_gs <- genelist_top5_gs[sapply(genelist_top5_gs,function(i) !any(is.na(i)))]
+
+rows_data <- data.frame(genes = unlist(genelist_top5_gs),
+                        clusters = gsub("cluster|:.*$","",unlist(labels_top5)))
+
+p <- FeatureStatPlot(seurat_obj, features = rows_data$genes, ident = "condition", plot_type = "heatmap", name = "Expression Level", rows_data = rows_data, show_row_names = TRUE, rows_split_by = "clusters", cluster_rows = FALSE, row_name_annotation = TRUE, cluster_columns = FALSE, rows_split_palette = "Set2", columns_split_palette = "Set2", layer = "scale.data", columns_split_by = "seurat_clusters")
+
+ggsave('./marker_gene_heatmap_top5.png',p,width=8,height=12, dpi = 300)
+ggsave('./marker_gene_heatmap_top5.pdf',p,width=8,height=12,useDingbats=FALSE)
+
+p <- lapply(1:length(genelist_top5_gs),function(i) {
+  p1 <- FeaturePlot(seurat_obj, features = genelist_top5_gs[[i]],combine = F,reduction = opt$vismethod, label = TRUE,pt.size = 2)
+  lapply(1:length(p1),function(j) p1[[j]]+labs(title = labels_top5[[i]][j]))})
+p <- unlist(p,recursive = F)
+m <- matrix(NA,nrow = length(selectedclusters),ncol = 5)
+m[1,1:length(genelist_top5_gs[[1]])] <- 1:length(genelist_top5_gs[[1]])
+for(i in 2:length(genelist_top5_gs)){
+  start <- max(m[i-1,],na.rm = T)
+  m[i,1:length(genelist_top5_gs[[i]])] <- (start+1):(start+length(genelist_top5_gs[[i]]))
+}
+mp <- grid.arrange(grobs=p,layout_matrix=m)
+ggsave('./marker_gene_top5.png',mp,width=12*5,height =12*length(genelist_top5_gs),limitsize = F,dpi=72)
+ggsave('./marker_gene_top5.pdf',mp,width=12*5,height =12*length(genelist_top5_gs),limitsize = F,useDingbats = FALSE)
+
+p <- FeatureStatPlot(seurat_obj, features = rows_data$genes, ident = "condition", cell_type = "dot", plot_type = "heatmap", name = "Expression Level", dot_size = function(x) sum(x > 0) / length(x), dot_size_name = "Percent Expressed", add_bg = FALSE, rows_data = rows_data, show_row_names = TRUE, rows_split_by = "clusters", cluster_rows = FALSE, cluster_columns = FALSE, row_name_annotation = TRUE, rows_split_palette = "Set2", columns_split_palette = "Set2", columns_split_by = "seurat_clusters", layer = "scale.data")
+ggsave('./marker_gene_dotplot_top5.png',p,width=12*5,height=12,limitsize = F,dpi=72)
+ggsave('./marker_gene_dotplot_top5.pdf',p,width=12*5,height=12,limitsize = F,useDingbats = FALSE)
+
+## violin plot
+p <- lapply(1:length(genelist_top5_gs),function(i){
+  p1 <- VlnPlot(seurat_obj, features=genelist_top5_gs[[i]],group.by='seurat_clusters',pt.size=0,combine=F)
+  lapply(1:length(p1),function(j) p1[[j]]+labs(title = labels_top5[[i]][j]) + theme(legend.position = "none"))
+})
+p <- unlist(p,recursive = F)
+m <- matrix(NA,nrow = length(selectedclusters),ncol = 5)
+m[1,1:length(genelist_top5_gs[[1]])] <- 1:length(genelist_top5_gs[[1]])
+for(i in 2:length(genelist_top5_gs)){
+  start <- max(m[i-1,],na.rm = T)
+  m[i,1:length(genelist_top5_gs[[i]])] <- (start+1):(start+length(genelist_top5_gs[[i]]))
+}
+mp <- grid.arrange(grobs=p,layout_matrix=m)
+ggsave('./marker_gene_violin_top5.png',mp,width=12*5,height =6*length(genelist_top5_gs),limitsize = F,dpi=72)
+ggsave('./marker_gene_violin_top5.pdf',mp,width=12*5,height =6*length(genelist_top5_gs),limitsize = F,useDingbats=FALSE)
+```
+
+# {-}
+
+# Differentially expressed genes between conditions (case vs control) {.tabset}
+
+## Number of differential genes
+
+```{r, echo=FALSE}
+if(opt$diff_gene_filtered != "NA") {
+  diff_flag = TRUE
+  #opt$diff_gene_filtered <- "./diff_gene_table_filter.xlsx"
+  } else {
+  diff_flag = FALSE
+  featureplot_width <- vlnplot_width <- default_width
+  featureplot_height <- vlnplot_height <- default_height
+  }
+```
+
+
+```{r num_diff_genes_barplot, eval=diff_flag, echo=diff_flag}
+marker_gene_file <- opt$diff_gene_filtered
+selectedclusters <- getSheetNames(marker_gene_file)
+selectedclusters <- selectedclusters[-length(selectedclusters)]
+selectedclusters <- gsub("diff_gene_","",selectedclusters)
+cluster_list_filter <- lapply(1:length(selectedclusters), function(i){
+  tmp <- read.xlsx(marker_gene_file, sheet = i, rowNames = FALSE, colNames = TRUE)
+  idx_fc <- grep("log2FC$", colnames(tmp))
+  tmp[order(abs(tmp[,idx_fc]),decreasing = TRUE),]
+})
+df <- data.frame(cluster=factor(rep(selectedclusters,times=2), levels = selectedclusters),
+                 condition=factor(rep(c('up','down'),each=(length(cluster_list_filter))),levels = c('up','down')),
+                 num=c(sapply(cluster_list_filter,function(i) sum(i[["avg_log2FC"]]>0)), -1*sapply(cluster_list_filter,function(i) sum(i[["avg_log2FC"]]<0))))
+df$num[is.na(df$num)] <- 0
+gp <- ggplot(data=df) + geom_bar(aes(x=cluster,y=num,fill=condition),position ='identity',stat='identity') +
+  theme_classic() + coord_flip() +
+  #scale_x_continuous(breaks = selectedclusters,labels = selectedclusters)+
+  scale_y_continuous(breaks=labeling::extended(range(df$num)[1],range(df$num)[2],4),labels = abs(labeling::extended(range(df$num)[1],range(df$num)[2],4))) +
+  labs(x='Cluster Number',y='Number of DEGs')
+ggsave('./diff_gene_barplot.png',gp,width=6,heigh=6,dpi=300)
+ggsave('./diff_gene_barplot.pdf',gp,width=6,heigh=6,useDingbats=FALSE)
+gp
+```
+
+## Top differential gene feature plot
+
+```{r diff_gene_featureplot,eval=diff_flag, echo=diff_flag,fig.show='hide'}
+#genelist_top1 <- sapply(1:length(selectedclusters), function(i) {cluster_list_filter[[i]]$gene_id[1]})
+genelist_top1_gs <- sapply(1:length(selectedclusters), function(i) {cluster_list_filter[[i]]$gene_name[1]})
+labels <- paste0(selectedclusters,':',genelist_top1_gs)
+labels <- labels[!is.na(genelist_top1_gs)]
+genelist_top1_gs <- genelist_top1_gs[!is.na(genelist_top1_gs)]
+
+p <- lapply(1:length(genelist_top1_gs), function(i) FeaturePlot(seurat_obj, features = genelist_top1_gs[i],cols=c('grey','red'),combine = TRUE,reduction = opt$vismethod, keep.scale = "feature", split.by = "condition", label = TRUE,pt.size = 2) + theme(legend.position = "right") + scale_y_continuous(sec.axis = dup_axis(name = labels[i])))
+
+m <- wrap_plots(p, ncol = 1)
+featureplot_width <- 6*nconditions
+featureplot_height <- 6*length(genelist_top1_gs)
+
+ggsave('./diff_gene.png',m,width=featureplot_width,height=featureplot_height,limitsize=F,dpi=300)
+ggsave('./diff_gene.pdf',m,width=featureplot_width,height=featureplot_height,useDingbats=F,limitsize=F)
+```
+
+```{r diff_gene_featureplot1, fig.width=featureplot_width, fig.height=featureplot_height,eval=diff_flag, echo=FALSE}
+grid.draw(m)
+```
+
+## Top differential gene dotplot
+
+```{r diff_gene_dotplot, eval=diff_flag, echo=marker_flag}
+rows_data <- data.frame(genes = genelist_top1_gs,
+                        clusters = gsub("cluster|:.*$","",labels))
+p <- FeatureStatPlot(seurat_obj, features = rows_data$genes, ident = "condition", cell_type = "dot", plot_type = "heatmap", name = "Expression Level", dot_size = function(x) sum(x > 0) / length(x), dot_size_name = "Percent Expressed", add_bg = FALSE, rows_data = rows_data, show_row_names = TRUE, rows_split_by = "clusters", cluster_rows = FALSE, cluster_columns = FALSE, row_name_annotation = TRUE, rows_split_palette = "Set2", columns_split_palette = "Set2", columns_split_by = "seurat_clusters",layer = "scale.data")
+ggsave('./diff_gene_dotplot.png',p,width=12,height=12, dpi = 300)
+ggsave('./diff_gene_dotplot.pdf',p,width=12,height=12, useDingbats=FALSE)
+p
+```
+
+## Top differential gene violin plot
+
+```{r diff_gene_vlnplot,eval=diff_flag, echo=diff_flag,fig.show='hide'}
+p <- lapply(1:length(genelist_top1_gs), function(i) VlnPlot(seurat_obj,features=genelist_top1_gs[i],group.by='seurat_clusters',pt.size=0, split.by = "condition") + labs(title = labels[i]) + theme(legend.position = "right"))
+m <- grid.arrange(grobs=p,ncol=round(sqrt(length(p))),nrow=ceiling(length(p)/round(sqrt(length(p)))))
+ggsave('./diff_gene_violin.png',m,width=12*round(sqrt(length(p))),height=6*ceiling(length(p)/round(sqrt(length(p)))),limitsize = F,dpi=300)
+ggsave('./diff_gene_violin.pdf',m,width=12*round(sqrt(length(p))),height=6*ceiling(length(p)/round(sqrt(length(p)))),limitsize = F,useDingbats=FALSE)
+vlnplot_width <- 12*round(sqrt(length(p)))
+vlnplot_height <- 6*ceiling(length(p)/round(sqrt(length(p))))
+```
+
+```{r diff_gene_vlnplot1, fig.width=vlnplot_width, fig.height=vlnplot_height,eval=diff_flag, echo=FALSE}
+grid.draw(m)
+```
+
+## Top differential gene heatmap
+
+```{r diff_gene_heatmap,eval=diff_flag, echo=diff_flag}
+p <- FeatureStatPlot(seurat_obj, features = rows_data$genes, ident = "condition", plot_type = "heatmap", name = "Expression Level", rows_data = rows_data, show_row_names = TRUE, rows_split_by = "clusters", cluster_rows = FALSE, row_name_annotation = TRUE, cluster_columns = FALSE, rows_split_palette = "Set2", columns_split_palette = "Set2", layer = "scale.data", columns_split_by = "seurat_clusters")
+
+ggsave('./diff_gene_heatmap.png',p,width=8,height=12, dpi = 300)
+ggsave('./diff_gene_heatmap.pdf',p,width=8,height=12,useDingbats=FALSE)
+p
+```
+
+```{r diff_figures_top5, echo=FALSE,eval=diff_flag, fig.show='hide'}
+genelist_top5_gs <- lapply(1:length(selectedclusters), function(i) {
+  if(nrow(cluster_list_filter[[i]]) == 0) NA else cluster_list_filter[[i]]$gene_name[0:min(5,nrow(cluster_list_filter[[i]]))]
+  })
+labels_top5 <- lapply(1:length(selectedclusters),function(i) paste0( selectedclusters[i],':',genelist_top5_gs[[i]]))
+labels_top5 <- labels_top5[sapply(genelist_top5_gs,function(i) !any(is.na(i)))]
+genelist_top5_gs <- genelist_top5_gs[sapply(genelist_top5_gs,function(i) !any(is.na(i)))]
+
+rows_data <- data.frame(genes = unlist(genelist_top5_gs),
+                        clusters = gsub("cluster|:.*$","",unlist(labels_top5)))
+
+p <- FeatureStatPlot(seurat_obj, features = rows_data$genes, ident = "condition", plot_type = "heatmap", name = "Expression Level", rows_data = rows_data, show_row_names = TRUE, rows_split_by = "clusters", cluster_rows = FALSE, row_name_annotation = TRUE, cluster_columns = FALSE, rows_split_palette = "Set2", columns_split_palette = "Set2", layer = "scale.data", columns_split_by = "seurat_clusters")
+
+ggsave('./diff_gene_heatmap_top5.png',p,width=8,height=12,dpi = 300)
+ggsave('./diff_gene_heatmap_top5.pdf',p,width=8,height=12,useDingbats=FALSE)
+
+p <- FeatureStatPlot(seurat_obj, features = rows_data$genes, ident = "condition", cell_type = "dot", plot_type = "heatmap", name = "Expression Level", dot_size = function(x) sum(x > 0) / length(x), dot_size_name = "Percent Expressed", add_bg = FALSE, rows_data = rows_data, show_row_names = TRUE, rows_split_by = "clusters", cluster_rows = FALSE, cluster_columns = FALSE, row_name_annotation = TRUE, rows_split_palette = "Set2", columns_split_palette = "Set2", columns_split_by = "seurat_clusters", layer = "scale.data")
+
+ggsave('./diff_gene_dotplot_top5.png',p,width=12*5,height=12,limitsize = F,dpi=72)
+ggsave('./diff_gene_dotplot_top5.pdf',p,width=12*5,height=12,limitsize = F,useDingbats = FALSE)
+
+## violin plot
+p <- lapply(1:length(genelist_top5_gs),function(i){
+  p1 <- VlnPlot(seurat_obj, features=genelist_top5_gs[[i]],group.by='seurat_clusters',pt.size=0,combine=F,split.by = "condition")
+  lapply(1:length(p1),function(j) p1[[j]]+labs(title = labels_top5[[i]][j]) + theme(legend.position = "none"))
+})
+p <- unlist(p,recursive = F)
+m <- matrix(NA,nrow = length(selectedclusters),ncol = 5)
+m[1,1:length(genelist_top5_gs[[1]])] <- 1:length(genelist_top5_gs[[1]])
+for(i in 2:length(genelist_top5_gs)){
+  start <- max(m[i-1,],na.rm = T)
+  m[i,1:length(genelist_top5_gs[[i]])] <- (start+1):(start+length(genelist_top5_gs[[i]]))
+}
+mp <- grid.arrange(grobs=p,layout_matrix=m)
+ggsave('./diff_gene_violin_top5.png',mp,width=12*5,height =6*length(genelist_top5_gs),limitsize = F,dpi=72)
+ggsave('./diff_gene_violin_top5.pdf',mp,width=12*5,height =6*length(genelist_top5_gs),limitsize = F,useDingbats=FALSE)
+```
+
+# {-}
+
+# Access to results files
+
+Detailed QC results: [QC](../qc/)
+
+Cell number by cluster summary: [tables](./tables/)
+
+Top 5 marker genes for each cluster, if applicable:
+
+* [feature plot](./figures/marker_gene_top5.png)
+* [dot plot](./figures/marker_gene_dotplot_top5.png)
+* [violin plot](./figures/marker_gene_violin_top5.png)
+* [heatmap](./figures/marker_gene_heatmap_top5.png)
+
+For marker gene list table: [marker_genes](./gene_table/marker_gene_table.xlsx)
+
+For filtered marker gene list table based on supplied cutoffs: [marker_genes_filter](./gene_table/marker_gene_table_filter.xlsx)
+
+Top 5 DEGs for each cluster (case vs control), if applicable:
+
+* [feature plot](./figures/diff_gene_top5.png)
+* [dot plot](./figures/diff_gene_dotplot_top5.png)
+* [violin plot](./figures_diff_gene_violin_top5.png)
+* [heatmap](./figures/diff_gene_heatmap_top5.png)
+
+For DEGs within each cluster (case vs control): [diff_genes](./gene_table/diff_gene_table.xlsx)
+
+For filtered DEGs within each cluster (case vs control): [diff_genes_filter.xlsx](./gene_table/diff_table_filter.xlsx)
+
+seurat object: [.rds file](./)
+
+on disk matrix (if applicable): [on_disk_mat](./on_disk_mat)

@@ -1,0 +1,123 @@
+---
+title: "QC report"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output:
+  rmdformats::readthedown:
+    self_contained: true
+    thumbnails: false
+    lightbox: false
+    gallery: false
+    highlight: tango
+    code_folding: hide
+---
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(message = FALSE, warning = FALSE, error = FALSE)
+```
+
+```{r load_library}
+### load libraries
+### matrixStats v1.2 and above seems to cause issues for glmGamPoi
+renv::load(Sys.getenv("PROJECT_DIR"))
+library(matrixStats)
+library(SoupX)
+library(scDblFinder)
+library(ggplot2)
+library(Seurat)
+library(patchwork)
+options(stringsAsFactors = F, future.globals.maxSize=50*1024^3)
+opt <- params$opt
+```
+
+```{r perform_qc, echo=FALSE}
+source(file.path(opt$workflowpath, "scripts/helper_functions.r"))
+seurat_obj <- qcsample_scRNAseq(
+    sampleid = opt$sampleid,
+    condition = opt$condition,
+    secondary_output = opt$secondary_output,
+    stage = "QC",
+    workflowpath = opt$workflowpath,
+    ambient_RNA_removal_flag = opt$ambient_RNA_removal_flag,
+    doublet_removal_flag = opt$doublet_removal_flag,
+    adaptive_cutoff_flag = opt$adaptive_cutoff_flag,
+    nCount_cutoff = opt$nCount_cutoff,
+    nFeature_cutoff = opt$nFeature_cutoff,
+    mt_cutoff = opt$mt_cutoff,
+    hb_cutoff = opt$hb_cutoff,
+    nCell_cutoff = opt$nCell_cutoff
+)
+```
+
+# QC Steps
+
+1. Ambient RNA correction using [SoupX](https://github.com/constantAmateur/SoupX) (if enabled)
+2. Doublet identification using [scDblFinder](https://github.com/plger/scDblFinder)
+3. Identification of cells with low number of total UMI counts (`r opt$nCount_cutoff`)
+4. Identification of cells with low number of detectable features/genes (`r opt$nFeature_cutoff`)
+5. Identification of cells with high percentage of mitochondrial concentration (`r opt$mt_cutoff`), indicating low quality/apoptotic cells
+6. Identification of cells with high percentage of hemoglobin concentration (`r opt$hb_cutoff`), indicating red blood cell contamination
+7. Identification of genes with low number of expressing cells (`r opt$nCell_cutoff`), indicating lowly expressed genes
+
+Adaptive cutoff will be used for step 3-7 if enabled. Adaptive cutoff is more stringent, and sample-specific depending on distribution of metrics.
+
+# QC threshold
+
+```{r}
+opt_postQC <- read.delim(paste0(opt$sampleid,"_opt_postQC.txt"), header = TRUE)
+qc_table <- data.frame(metric=c("ambient_RNA_removal_flag", "doublet_removal_flag", "nCount_cutoff", "nFeature_cutoff","mt_cutoff", "hb_cutoff", "nCell_cutoff","adaptive_cutoff_flag"),
+                       description=c("0 or 1 to indicate whether to perform ambient RNA removal/correction",
+                                     "0 or 1 to indicate whether to perfrom doublet removal",
+                                     "Cutoff for total number of UMI counts",
+                                     "Cutoff for total number of detectable genes/features",
+                                     "Cutoff for percentage of mitochondria concentration",
+                                     "Cutoff for percentage of hemoglobin concentration",
+                                     "Cutoff for number of cells with expression for feature/gene",
+                                     "0 or 1 to indicate whether to apply adaptive cutoff idenfication based on IQR"),
+                       cutoff_suppied=c(opt$ambient_RNA_removal_flag, opt$doublet_removal_flag, opt$nCount_cutoff, opt$nFeature_cutoff, opt$mt_cutoff, opt$hb_cutoff, opt$nCell_cutoff, opt$adaptive_cutoff_flag),
+                       cutoff_used=c(opt_postQC$ambient_RNA_removal_flag, opt_postQC$doublet_removal_flag, opt_postQC$nCount_cutoff, opt_postQC$nFeature_cutoff, opt_postQC$mt_cutoff, opt_postQC$hb_cutoff, opt_postQC$nCell_cutoff, opt_postQC$adaptive_cutoff_flag))
+knitr::kable(qc_table, caption = "A list of QC metrics used")
+```
+
+# Distribution of metrics {.tabset}
+
+## Violin plot
+
+```{r, fig.width=12, fig.height=5}
+cell_metadata <- read.delim(paste0(opt$sampleid,"_qc_metrics_cells.txt"), header = TRUE)
+if(length(unique(cell_metadata$scDblFinder.class)) > 1) cell_metadata$scDblFinder.class <- factor(cell_metadata$scDblFinder.class, levels = c("singlet", "doublet"))
+gps <- lapply(c("nCount_RNA", "nFeature_RNA","percent.mt", "percent.hb"), function(i) {
+  ggplot() + geom_violin(aes(x = opt$sampleid, y = cell_metadata[[i]]), fill = "#F8766D") + geom_jitter(aes(x = opt$sampleid, y = cell_metadata[[i]]), size=1, height = 0) + labs(x = "", y = "", title = i) + theme_classic() + theme(plot.title = element_text(face = "bold", hjust = 0.5, size = 12), axis.text.x = element_text(size = 10)) 
+})
+p <- wrap_plots(gps, ncol = 4)
+ggsave('qc_violinplot.png',p,width=12,height=5)
+p
+```
+
+## Scatter plot
+
+```{r, fig.width=12, fig.height=12}
+plot1 <- ggplot(cell_metadata, aes(x = nCount_RNA, y = percent.mt)) + geom_point(aes(shape = scDblFinder.class)) + theme_classic() + scale_shape_manual(values = c(1, 4)) + facet_wrap(~scDblFinder.class, ncol = 2)
+  plot2 <- ggplot() + geom_point(aes(x = nCount_RNA, y = nFeature_RNA,shape = scDblFinder.class), data = cell_metadata) + theme_classic() + scale_shape_manual(values = c(1, 4)) + facet_wrap(~scDblFinder.class, ncol = 2)
+p <- plot1 + plot2 + plot_layout(ncol=1)
+ggsave("qc_scatterplot.png",p,width=12,height=12)
+p
+```
+
+# {-}
+
+# Summary
+
+```{r}
+qc_summary <- read.delim(paste0(opt$sampleid,'_qc_metrics_summary.txt'),header = TRUE)
+```
+
+The total number of cells before QC is `r nrow(cell_metadata)`. Ambient RNA rate is estimated to be `r round(unique(cell_metadata$soupX.rho)*100,2)`%. `r sum(cell_metadata$scDblFinder.class == "doublet")` # of cells were predicted to be doublets (`r round(sum(cell_metadata$scDblFinder.class == "doublet")/nrow(cell_metadata)*100,2)`% doublet rate). With defined cutoffs, `r qc_summary["hb_cutoff"]` # of cells pass all cutoffs, and `r qc_summary["total_genes"]` # of genes pass the cutoff. 
+
+```{r, fig.width=12, fig.height=8}
+qc_summary1 <- data.frame(metric = factor(names(qc_summary[-c(1,ncol(qc_summary))]), levels = names(qc_summary)[(length(qc_summary)-1):2]),
+                            value = as.numeric(qc_summary[-c(1,ncol(qc_summary))]))
+gp <- ggplot(aes(x=metric, y = value), data = qc_summary1) + geom_col(aes(fill=metric)) + theme_classic() + geom_text(aes(label = value)) + coord_flip() + labs(x = "", y = "# of cells passing QC") + guides(fill="none") + theme(axis.text = element_text(size = 10), axis.title = element_text(size = 12, face = "bold"))
+ggsave('qc_summary.png',gp,width=12,height=8)
+gp
+```
