@@ -11,7 +11,7 @@ include { INTEGRATESAMPLES; FINDMARKERS; COMBINETABLES; FINALREPORT } from './mo
 include { MERGESAMPLES; FINDMARKERS as FINDMARKERS_MERGE; COMBINETABLES as COMBINETABLES_MERGE; FINALREPORT as FINALREPORT_MERGE } from './modules/analysis.nf'
 
 samples_ch = Channel.fromPath(params.samplesheet)
-    .splitCsv(header: true, sep: ',')
+    .splitCsv(header: true, sep: '\t')
     .map { row -> tuple( row.sampleid, row.condition, file(row.secondary_output) ) }
 
 workflow {
