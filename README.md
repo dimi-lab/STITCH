@@ -22,6 +22,9 @@ Clone the pipeline repository to your local machine using the following command:
 ```bash
 git clone https://github.com/Liuy12/STITCH.git
 cd STITCH
+## optional, specify .cache directory for renv
+mkdir .cache/
+export RENV_PATHS_CACHE="$PWD/.cache/"
 ```
 
 ### 2. Install R Dependencies
