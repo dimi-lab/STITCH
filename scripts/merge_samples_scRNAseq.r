@@ -49,7 +49,8 @@ if(opt$cellcycle_correction_flag == "1"){
   object.features <- setdiff(object.features,c(s.features, g2m.features))
 }
 
-merged_obj <- merge(object.list[[1]], y = object.list[2:length(object.list)], merge.data = TRUE)
+if(length(object.list) == 1) merged_obj <- object.list[[1]] else merged_obj <- merge(object.list[[1]], y = object.list[2:length(object.list)], merge.data = TRUE)
+
 assay <- ifelse(opt$norm_dimreduc == "SCT", "SCT", "RNA")
 DefaultAssay(merged_obj) <- assay
 VariableFeatures(merged_obj) <- object.features

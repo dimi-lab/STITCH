@@ -54,7 +54,7 @@ if(opt$cellcycle_correction_flag == "1"){
 }
 
 assay <- ifelse(opt$norm_dimreduc == "SCT", "SCT", "Spatial")
-merged_obj <- merge(object.list[[1]], y = object.list[2:length(object.list)], merge.data = TRUE)
+if(length(object.list) == 1) merged_obj <- object.list[[1]] else merged_obj <- merge(object.list[[1]], y = object.list[2:length(object.list)], merge.data = TRUE)
 DefaultAssay(merged_obj) <- assay
 VariableFeatures(merged_obj) <- object.features
 remove_object("object.list")
