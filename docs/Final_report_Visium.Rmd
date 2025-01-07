@@ -267,8 +267,13 @@ grid.draw(m)
 ## Feature gene expression spatial plot
 
 ```{r}
-feature_gene_spatial_width <- 6*nsamples
-feature_gene_spatial_height <- 6*length(genes)
+if(nsamples == 1){
+  feature_gene_spatial_width <- 6*round(sqrt(length(genes)))
+  feature_gene_spatial_height <- 6*ceiling(length(genes)/round(sqrt(length(genes))))
+} else{
+  feature_gene_spatial_width <- 6*nsamples
+  feature_gene_spatial_height <- 6*length(genes)
+}
 ```
 
 ```{r feature_gene_spatial, eval=genelist_flag, echo=genelist_flag,fig.width=feature_gene_spatial_width, fig.height=feature_gene_spatial_height}
@@ -499,7 +504,7 @@ ggsave('./diff_gene.pdf',m,width=featureplot_width,height=featureplot_height,use
 ```
 
 ```{r diff_gene_featureplot1, fig.width=featureplot_width, fig.height=featureplot_height,eval=diff_flag, echo=FALSE}
-grid.draw(m)
+print("Figure not shown. Refer to ./diff_gene.png file")
 ```
 
 ## Top differential gene dotplot

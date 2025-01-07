@@ -294,7 +294,7 @@ genelist_top1_gs <- genelist_top1_gs[!is.na(genelist_top1_gs)]
 #genelist_top1 <- genelist_top1[!is.na(genelist_top1)]
 p <- lapply(1:length(genelist_top1_gs), function(i) FeaturePlot(seurat_obj, features = genelist_top1_gs[i],cols=c('grey','red'),reduction = opt$vismethod, label = TRUE,pt.size = 2) + labs(title = labels[i]))
 m <- grid.arrange(grobs=p,ncol=round(sqrt(length(p))),nrow=ceiling(length(p)/round(sqrt(length(p)))))
-ggsave('./marker_gene.png',m,width=12*round(sqrt(length(p))),height=12*ceiling(length(p)/round(sqrt(length(p)))),limitsize = F,dpi=300)
+ggsave('./marker_gene.png',m,width=12*round(sqrt(length(p))),height=12*ceiling(length(p)/round(sqrt(length(p)))),limitsize = F,dpi=72)
 ggsave('./marker_gene.pdf',m,width=12*round(sqrt(length(p))),height=12*ceiling(length(p)/round(sqrt(length(p)))),limitsize = F,useDingbats=FALSE)
 marker_gene_featureplot_width <- 12*round(sqrt(length(p)))
 marker_gene_featureplot_height <- 12*ceiling(length(p)/round(sqrt(length(p))))
@@ -467,12 +467,12 @@ m <- wrap_plots(p, ncol = 1)
 featureplot_width <- 6*nconditions
 featureplot_height <- 6*length(genelist_top1_gs)
 
-ggsave('./diff_gene.png',m,width=featureplot_width,height=featureplot_height,limitsize=F,dpi=300)
+ggsave('./diff_gene.png',m,width=featureplot_width,height=featureplot_height,limitsize=F,dpi=72)
 ggsave('./diff_gene.pdf',m,width=featureplot_width,height=featureplot_height,useDingbats=F,limitsize=F)
 ```
 
-```{r diff_gene_featureplot1, fig.width=featureplot_width, fig.height=featureplot_height,eval=diff_flag, echo=FALSE}
-grid.draw(m)
+```{r diff_gene_featureplot1,eval=diff_flag, echo=FALSE}
+print("Figure not shown. Refer to ./diff_gene.png file")
 ```
 
 ## Top differential gene dotplot
