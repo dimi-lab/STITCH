@@ -103,7 +103,7 @@ nextflow run main.nf --samplesheet samplesheet.tsv -c nextflow.config.scRNAseq.h
 The pipeline currently supports local(default, `-profile local`) or slurm (`-profile slurm`). You can modify the config file based on your own needs. 
 You can add `-resume` option to the command if you want to resume a pipeline.
 
-**Recommend to add `-profile slurm` when launching the pipeline. Also add `-resume` option to resume a pipeline, e.g. after QC or updating a parameter **
+**Recommend to add `-profile slurm` when launching the pipeline. Also add `-resume` option to resume a pipeline, e.g. after QC or updating a parameter**
 
 ---
 
