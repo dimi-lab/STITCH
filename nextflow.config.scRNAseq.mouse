@@ -1,0 +1,143 @@
+// Default configs
+
+params {
+
+  // General
+  // No need to modify
+  workflowpath = "${projectDir}"
+  // author name to add to the final report
+  authorname = "Liu,Leo"
+  // one of scRNAseq, Visium
+  data_type = "scRNAseq"
+  // Full path to a .txt file containing a list of genes,one gene per line
+  // set to "NA" to disable
+  feature_list = "${projectDir}/testdata/feature_gene.txt"
+  // output directory
+  output_dir = "${projectDir}/output/"
+  // Path to gene level annotation file. This is used to add feature level meta data
+  geneinfo = "${projectDir}/docs/mouse_gene_info_2020A.tsv"
+  
+  // QC
+  qc_only = true
+  // "0" or "1" to indicate whether to perform ambient RNA removal/correction using SoupX
+  // only applicable to scRNAseq
+  ambient_RNA_removal_flag = "1"
+  // "0" or "1" to indicate whether to perfrom doublet removal using scDblFinder
+  // only applicable to scRNAseq  
+  doublet_removal_flag = "1"
+  // "0" or "1" to indicate whether to apply adaptive cutoff idenfication (based on IQR)
+  adaptive_cutoff_flag = "0"
+  // Cutoff for percentage of mitochondria concentration
+  // cells with values higher than the cutoff will be removed
+  mt_cutoff = 40
+  // Cutoff for percentage of hemoglobin concentration
+  // cells with values higher than the cutoff will be removed
+  hb_cutoff = 20
+  // Cutoff for total number of detectable genes/features
+  // cells with values lower than the cutoff will be removed
+  nFeature_cutoff = 50
+  // Cutoff for total number of UMI counts
+  // cells with values lower than the cutoff will be removed
+  nCount_cutoff = 200
+  // Cutoff for number of cells with expression for feature/gene
+  // genes/features with values lower than the cutoff will be removed
+  nCell_cutoff = 10
+
+  // Normalization
+  // normalization method for dimension reduction and clustering, either SCT or LogNormalize
+  norm_dimreduc = "SCT"
+  // normalization method for differential testing, either SCT or LogNormalize
+  norm_diff = "LogNormalize"
+  // cell-cycle 
+  // "0" or "1" to indicate whether to estimate and correct for cell-cycle effect.
+  cellcycle_correction_flag = "1"
+  // path to gene list (Gene symbols) for cell-cycle S-phase, one gene per line
+  // required if cellcycle_correction is set to "1"
+  genelist_S_phase = "${projectDir}/docs/S_genes_mouse.tsv"
+  // path to gene list (gene symbols) for cell-cycle G2M-phase, one gene per line
+  // required if cellcycle_correction is set to "1"
+  genelist_G2M_phase = "${projectDir}/docs/G2M_genes_mouse.tsv"
+
+  // Analysis strategy
+  // whether to perform merge-based analysis
+  merge_analysis = false
+  // whether to perform integration-based analysis
+  integration_analysis = true
+  // if merge_analysis is enabled, whether to stop after merge-based analysis. Could be useful if you want to evaluate parameters like resolution.
+  merge_only = false
+  // if integration_analysis is enabled, whether to stop after integration-based analysis. Could be useful if you want to evaluate parameters like resolution.
+  integration_only = false
+
+  // Integration strategy
+  // cca, rpca, harmony, fastmnn, or scvi
+  integration_method = "harmony"
+  // "0" or "1" to indicate whether to perform sketch-based workflow
+  sketch_flag = "0"
+
+  // Clustering
+  // Resolution parameter used to identify number of clusters
+  resolution = 0.8
+  // Method used for visualization, either tsne or umap
+  vismethod = "umap"
+  // method for spatial clustering, Banksy or Seurat
+  // only applicable to spatial data
+  spatial_cluster = "NA"
+
+  // Differential expression
+  // Character value specifying control group for differential expression analysis
+  // Set to NA to disable
+  control_var = "Control"
+  // Character value specifying case group for differential expression analysis
+  // Set to NA to disable
+  case_var = "Case"
+  // Covariates to adjust, when performing differential analysis between conditions
+  // values should be from column names from sampleinfo file
+  // e.g, if sampleinfo file contains information for 'age' and 'gender',
+  // and you want to correct for age and gender effects, you can specify
+  // covariate_list = "age,gender"
+  // note that if covariate_list is set, you will need to choose one of 
+  // LR, negbinom, poisson or MAST as method for statistical test. 
+  covariate_list = "NA"
+  // Denotes which statistical test to use
+  // refer to FindMarkers function for more details
+  test = "wilcox"
+  // fold change cutoff to identify differentially expressed genes
+  fc = 2
+  // p value cutoff to identify differentially expressed genes
+  pval = 0.01
+  // "0" or "1" to indicate whether to use Bonferroni adjusted p value
+  pval_flag = "1"
+  // percentage of experssion cutoff to identify differentially expressed genes
+  // require at least one of the group (e.g. control or case)
+  // to have percentage of cells expressing a gene above specified value.
+  pct=20
+}
+
+
+profiles {
+    // Default profile (local execution)
+    local {
+      process.executor = 'local'
+      process.memory = '100Gb'
+      process.INTEGRATESAMPLES.memory = '200G'
+      workDir = './work'
+    }     
+
+    // SLURM execution profile
+    slurm {
+      process.executor = 'slurm'
+      process.queue = 'cpu-short'
+      //process.memory = '100Gb'
+      //process.INTEGRATESAMPLES.memory = '200G'
+      process.clusterOptions = '--cpus-per-task 10  --mem 200G'
+      process.time = '6h'
+      workDir = './work'
+    }
+}
+
+manifest {
+    name = 'STITCH'
+    author = 'Yuanhang Liu'
+    description = 'A nextflow pipeline for scRNA-seq and Visium data analysis'
+    version = '0.0.99'
+}
