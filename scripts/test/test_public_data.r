@@ -7,6 +7,9 @@
 # plan("multicore", workers = 10)
 # library("DropletUtils")
 
+library(Seurat)
+library(patchwork)
+
 reference <- SeuratDisk::LoadH5Seurat("PBMC_ADT_scRNAseq/data/multi.h5seurat", assays = "SCT")
 
 data.seurat.list <- Seurat::SplitObject(reference, split.by = "donor")
@@ -47,17 +50,23 @@ write.table(sampleinfo, "testdata/sampleinfo_Visium_DLPFC.txt", row.names = F, c
 
 ######### integrate vs merge for DLPFC
 integrated_obj <- readRDS("output_Visium_DLPFC_SCT/integrate/integrated_obj.rds")
-SpatialDimPlot(integrated_obj, group.by = "seurat_clusters", label = T, repel = T, label.size = 4, pt.size.factor = 2, images = "X151673")
-SpatialDimPlot(integrated_obj, group.by = "seurat_clusters", label = T, repel = T, label.size = 4, pt.size.factor = 2, images = "X151507")
+p1 <- SpatialDimPlot(integrated_obj, group.by = "seurat_clusters", label = T, repel = T, label.size = 4, pt.size.factor = 2, images = "X151673")
+p2 <- SpatialDimPlot(integrated_obj, group.by = "seurat_clusters", label = T, repel = T, label.size = 4, pt.size.factor = 2, images = "X151507")
 
 merged_obj <- readRDS("output_Visium_DLPFC_SCT/merge/merged_obj.rds")
-SpatialDimPlot(merged_obj, group.by = "seurat_clusters", label = T, repel = T, label.size = 4, pt.size.factor = 2, images = "X151673")
-SpatialDimPlot(merged_obj, group.by = "seurat_clusters", label = T, repel = T, label.size = 4, pt.size.factor = 2, images = "X151507")
+p3 <- SpatialDimPlot(merged_obj, group.by = "seurat_clusters", label = T, repel = T, label.size = 4, pt.size.factor = 2, images = "X151673")
+p4 <- SpatialDimPlot(merged_obj, group.by = "seurat_clusters", label = T, repel = T, label.size = 4, pt.size.factor = 2, images = "X151507")
 
 ########### lognorm
 integrated_obj_lognorm <- readRDS("output_Visium_DLPFC_lognorm//integrate/integrated_obj.rds")
-SpatialDimPlot(integrated_obj_lognorm, group.by = "seurat_clusters", label = T, repel = T, label.size = 4, pt.size.factor = 2, images = "X151673")
-SpatialDimPlot(integrated_obj_lognorm, group.by = "seurat_clusters", label = T, repel = T, label.size = 4, pt.size.factor = 2, images = "X151507")
+p5 <- SpatialDimPlot(integrated_obj_lognorm, group.by = "seurat_clusters", label = T, repel = T, label.size = 4, pt.size.factor = 2, images = "X151673")
+p6 <- SpatialDimPlot(integrated_obj_lognorm, group.by = "seurat_clusters", label = T, repel = T, label.size = 4, pt.size.factor = 2, images = "X151507")
 
+
+merge_obj_lognorm <- readRDS("output_Visium_DLPFC_lognorm/merge/merged_obj.rds")
+p7 <- SpatialDimPlot(merge_obj_lognorm, group.by = "seurat_clusters", label = T, repel = T, label.size = 4, pt.size.factor = 2, images = "X151673")
+p8 <- SpatialDimPlot(merge_obj_lognorm, group.by = "seurat_clusters", label = T, repel = T, label.size = 4, pt.size.factor = 2, images = "X151507")
+
+wrap_plots(list(p1,p2,p3,p4,p5,p6,p7,p8),ncol = 2)
 
 
