@@ -16,7 +16,11 @@ option_list <- list(
   make_option(c("--norm_dimreduc"), type="character", default=NULL, 
               help="normalization method for dimension reduction. [default= %default]", metavar="character"),
   make_option(c("--spatial_cluster"), type="character", default=NULL, 
-              help="Spatial clustering algorithm, Seurat or Banksy. [default= %default]", metavar="character")
+              help="Spatial clustering algorithm, Seurat or Banksy. [default= %default]", metavar="character"),
+  make_option(c("--lambda"), type="numeric", default=0.2, 
+              help="lambda parameter for Banksy. Influence of the neighborhood. Larger values yield more spatially coherent domains. [default= %default]", metavar="numeric"),
+  make_option(c("--k_geom"), type="numeric", default=50, 
+              help="k_geom parameter for Banksy. Local neighborhood size. Larger values will yield larger domains. [default= %default]", metavar="numeric")
   )
 
 opt_parser <- OptionParser(option_list=option_list)
@@ -65,7 +69,7 @@ if(opt$norm_dimreduc == "LogNormalize"){
 
 if(opt$spatial_cluster == "Banksy"){
   if(assay == "Spatial") merged_obj[[assay]] <- JoinLayers(merged_obj[[assay]])
-  merged_obj <- RunBanksy(merged_obj, lambda = 0.2, assay = assay, slot = 'data', features = 'variable',group = 'sampleid', split.scale = FALSE, k_geom = 50, dimx = 'x', dimy = 'y')
+  merged_obj <- RunBanksy(merged_obj, lambda = opt$lambda, assay = assay, slot = 'data', features = 'variable',group = 'sampleid', split.scale = FALSE, k_geom = opt$k_geom, dimx = 'x', dimy = 'y')
   
   merged_obj <- RunPCA(merged_obj, verbose = FALSE, assay = 'BANKSY', npcs = 30, features = VariableFeatures(merged_obj, assay = assay))
   merged_obj <- FindNeighbors(merged_obj, dims = 1:30, assay = "BANKSY")

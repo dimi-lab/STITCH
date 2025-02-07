@@ -14,7 +14,15 @@ option_list <- list(
   make_option(c("--genelist_S_phase"), type="character", default="NA", 
               help="Path to gene list (Gene Symbols) for cell-cycle S-phase, one gene per line. [default= %default]", metavar="character"),
   make_option(c("--genelist_G2M_phase"), type="character", default="NA", 
-              help="Path to gene list (Gene Symbols) for cell-cycle G2M-phase, one gene per line. [default= %default]", metavar="character")
+              help="Path to gene list (Gene Symbols) for cell-cycle G2M-phase, one gene per line. [default= %default]", metavar="character"),
+  make_option(c("--norm_dimreduc"), type="character", default=NULL, 
+              help="normalization method for dimension reduction. [default= %default]", metavar="character"),
+  make_option(c("--spatial_cluster"), type="character", default=NULL, 
+              help="Spatial clustering algorithm, Seurat or Banksy. [default= %default]", metavar="character"),
+  make_option(c("--lambda"), type="numeric", default=0.2, 
+              help="lambda parameter for Banksy. Influence of the neighborhood. Larger values yield more spatially coherent domains. [default= %default]", metavar="numeric"),
+  make_option(c("--k_geom"), type="numeric", default=50, 
+              help="k_geom parameter for Banksy. Local neighborhood size. Larger values will yield larger domains. [default= %default]", metavar="numeric")
   )
 
 opt_parser <- OptionParser(option_list=option_list)
@@ -49,7 +57,8 @@ object.list <- foreach(i = 1:length(seurat_obj_paths)) %dopar%{
   write_matrix_dir(mat = object[[assay]]$counts, dir = paste0("./on_disk_mat_", unique(object$sampleid)))
   mat <- open_matrix_dir(dir = paste0("./on_disk_mat_", unique(object$sampleid)))
   list(metadata = object@meta.data, mat = mat)
-}## using normalizedata instead of sctransform
+}
+## using normalizedata instead of sctransform
 ## currently, sctransform has issues with sketch-based analysis
 ## collapse does not work for merge
 data.list <- lapply(object.list, function(i) i[[2]])
@@ -93,25 +102,42 @@ if(opt$cellcycle_correction_flag == "1"){
 }
 integrated_obj <- ScaleData(integrated_obj, verbose = F)
 
-integrated_obj <- RunBanksy(integrated_obj, lambda = 0.2, assay = 'sketch', slot = 'data', features = 'variable',group = 'sampleid', split.scale = FALSE, k_geom = 50, dimx = 'x', dimy = 'y')
-
-integrated_obj <- RunPCA(integrated_obj, assay = 'BANKSY',verbose = F, npcs = 30)
-DefaultAssay(integrated_obj) <- "sketch"
-
 method_list <- data.frame(name = c("cca", "rpca", "harmony", "fastmnn", "scvi"),
                           function_name = c("CCAIntegration", "RPCAIntegration", "HarmonyIntegration", "FastMNNIntegration", "scVIIntegration"))
-integrated_obj <- IntegrateLayers(
-  object = integrated_obj, 
-  method = get(method_list$function_name[method_list$name == opt$integration_method]),
-  orig.reduction = "pca", 
-  new.reduction = opt$integration_method,
-  verbose = FALSE
-)
 
-integrated_obj <- FindNeighbors(integrated_obj, dims = 1:30, reduction = opt$integration_method, assay = "BANKSY")
-integrated_obj <- FindClusters(integrated_obj, resolution = opt$resolution, graph.name = "BANKSY_snn", cluster.name = "seurat_clusters_sketch")
-integrated_obj <- RunUMAP(integrated_obj, dims = 1:30, reduction = opt$integration_method, assay = "BANKSY")
-integrated_obj <- RunTSNE(integrated_obj, dims = 1:30, reduction = opt$integration_method, assay = "BANKSY")
+if(opt$spatial_cluster == "Banksy"){
+  integrated_obj[[assay]] <- JoinLayers(integrated_obj[[assay]])
+  integrated_obj <- RunBanksy(integrated_obj, lambda = opt$lambda, assay = 'sketch', slot = 'data', features = 'variable',group = 'sampleid', split.scale = FALSE, k_geom = opt$k_geom, dimx = 'x', dimy = 'y')
+  integrated_obj <- RunPCA(integrated_obj, assay = 'BANKSY', npcs = 30, features = VariableFeatures(integrated_obj, assay = assay))
+  DefaultAssay(integrated_obj) <- "sketch"
+  integrated_obj[[assay]] <- split(integrated_obj[[assay]], f = integrated_obj$sampleid)
+  integrated_obj <- IntegrateLayers(
+    object = integrated_obj, 
+    method = get(method_list$function_name[method_list$name == opt$integration_method]),
+    orig.reduction = "pca", 
+    new.reduction = opt$integration_method,
+    verbose = TRUE,
+    features = VariableFeatures(integrated_obj, assay = assay)
+  )
+  integrated_obj <- FindNeighbors(integrated_obj, dims = 1:30, reduction = opt$integration_method, assay = "BANKSY")
+  integrated_obj <- FindClusters(integrated_obj, resolution = opt$resolution, graph.name = "BANKSY_snn", cluster.name = "seurat_clusters_sketch")
+  integrated_obj <- RunUMAP(integrated_obj, dims = 1:30, reduction = opt$integration_method, assay = "BANKSY")
+  integrated_obj <- RunTSNE(integrated_obj, dims = 1:30, reduction = opt$integration_method, assay = "BANKSY")
+} else {
+  integrated_obj <- RunPCA(integrated_obj, npcs = 30, verbose = F)
+  integrated_obj <- IntegrateLayers(
+    object = integrated_obj, 
+    method = get(method_list$function_name[method_list$name == opt$integration_method]),
+    orig.reduction = "pca", 
+    new.reduction = opt$integration_method,
+    verbose = TRUE,
+    features = VariableFeatures(integrated_obj, assay = assay)
+  )
+  integrated_obj <- FindNeighbors(integrated_obj, dims = 1:30, reduction = opt$integration_method)
+  integrated_obj <- FindClusters(integrated_obj, resolution = opt$resolution)
+  integrated_obj <- RunUMAP(integrated_obj, dims = 1:30, reduction = opt$integration_method, return.model = TRUE)
+  integrated_obj <- RunTSNE(integrated_obj, dims = 1:30, reduction = opt$integration_method)
+}
 
 integrated_obj <- ProjectIntegration(object = integrated_obj, 
                                  sketched.assay = "sketch",

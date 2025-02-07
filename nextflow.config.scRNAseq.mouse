@@ -82,6 +82,12 @@ params {
   // method for spatial clustering, Banksy or Seurat
   // only applicable to spatial data
   spatial_cluster = "NA"
+  // lambda parameter for Banksy, larger values yield more spatially coherent domains. For Visuim, recommend to use 0.2 for domain segmentation. For Visuim HD, use 0.2 for cell typing, and 0.8 for domain segmentation
+  // only applicable to spatial data
+  lambda = "NA"
+  // k_geom parameter for Banksy, larger values will yield larger domains. Recommend to use 18 for Visium data
+  // only applicable to spatial data
+  k_geom = "NA"
 
   // Differential expression
   // Character value specifying control group for differential expression analysis
@@ -139,5 +145,5 @@ manifest {
     name = 'STITCH'
     author = 'Yuanhang Liu'
     description = 'A nextflow pipeline for scRNA-seq and Visium data analysis'
-    version = '0.0.99'
+    version = '1.0.0'
 }

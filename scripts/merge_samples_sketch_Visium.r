@@ -12,7 +12,15 @@ option_list <- list(
   make_option(c("--genelist_S_phase"), type="character", default="NA", 
               help="Path to gene list (Gene Symbols) for cell-cycle S-phase, one gene per line. [default= %default]", metavar="character"),
   make_option(c("--genelist_G2M_phase"), type="character", default="NA", 
-              help="Path to gene list (Gene Symbols) for cell-cycle G2M-phase, one gene per line. [default= %default]", metavar="character")
+              help="Path to gene list (Gene Symbols) for cell-cycle G2M-phase, one gene per line. [default= %default]", metavar="character"),
+  make_option(c("--norm_dimreduc"), type="character", default=NULL, 
+              help="normalization method for dimension reduction. [default= %default]", metavar="character"),
+  make_option(c("--spatial_cluster"), type="character", default=NULL, 
+              help="Spatial clustering algorithm, Seurat or Banksy. [default= %default]", metavar="character"),
+  make_option(c("--lambda"), type="numeric", default=0.2, 
+              help="lambda parameter for Banksy. Influence of the neighborhood. Larger values yield more spatially coherent domains. [default= %default]", metavar="numeric"),
+  make_option(c("--k_geom"), type="numeric", default=50, 
+              help="k_geom parameter for Banksy. Local neighborhood size. Larger values will yield larger domains. [default= %default]", metavar="numeric")
   )
 
 opt_parser <- OptionParser(option_list=option_list)
@@ -29,28 +37,44 @@ options(future.globals.maxSize = 500*1024^3,stringsAsFactors = FALSE)
 registerDoFuture()
 plan("multisession", workers = 5)
 
+remove_object <- function(object_name){
+  for(i in object_name) assign(i, NULL,envir = .GlobalEnv)
+  rm(list = object_name, envir = .GlobalEnv)
+  invisible(gc(verbose = FALSE))
+}
+
 t1 <- Sys.time()
+assay <- "Spatial"
 message("perform sample merging using sketch-based method")
 seurat_obj_paths <- list.files("./", pattern = "*.rds")
-object.list <- foreach(i = seurat_obj_paths) %dopar% readRDS(i)
-object.features <- SelectIntegrationFeatures(object.list = object.list, nfeatures = 3000)
+object.list <- foreach(i = 1:length(seurat_obj_paths)) %dopar%{
+  object <- readRDS(seurat_obj_paths[i])
+  write_matrix_dir(mat = object[[assay]]$counts, dir = paste0("./on_disk_mat_", unique(object$sampleid)))
+  mat <- open_matrix_dir(dir = paste0("./on_disk_mat_", unique(object$sampleid)))
+  list(metadata = object@meta.data, mat = mat)
+}
 ## using normalizedata instead of sctransform
 ## currently, sctransform has issues with sketch-based analysis, https://github.com/satijalab/seurat/issues/7336
 ## collapse does not work for merge
-assay <- "Spatial"
-sample_merge <- merge(object.list[[1]], object.list[[2:length(object.list)]])
-rm(object.list)
-gc()
+data.list <- lapply(object.list, function(i) i[[2]])
+names(data.list) <- gsub(".rds","",basename(seurat_obj_paths))
+metadata.list <- lapply(object.list, function(i) i[[1]])
+metadata <- Reduce(rbind, metadata.list)
+sample_merge <- CreateSeuratObject(counts = data.list, meta.data = metadata)
 sample_merge[[assay]] <- JoinLayers(sample_merge[[assay]])
 if(dir.exists("./on_disk_mat")) unlink("./on_disk_mat", recursive = TRUE)
 message("create on-disk matrix using merged object")
 write_matrix_dir(mat = sample_merge[[assay]]$counts, dir = "./on_disk_mat")
-meta.data <- sample_merge@meta.data
-rm(sample_merge)
-gc()
+metadata <- sample_merge@meta.data
+
+remove_object(c("sample_merge", "metadata.list", "data.list", "object.list"))
+
 counts.mat <- open_matrix_dir(dir = "./on_disk_mat")
 message("create seurat object based on on-disk matrix")
-merged_obj <- CreateSeuratObject(counts = counts.mat, min.cells=0,min.features=0, meta.data = meta.data)
+merged_obj <- CreateSeuratObject(counts = counts.mat, min.cells=0,min.features=0, meta.data = metadata)
+
+remove_object(c("counts.mat", "metadata"))
+
 DefaultAssay(merged_obj) <- assay
 merged_obj <- NormalizeData(merged_obj)
 merged_obj[[assay]] <- split(merged_obj[[assay]], f = merged_obj$sampleid)
@@ -60,7 +84,7 @@ if(opt$cellcycle_correction_flag == "1"){
   message('remove cell-cycle related genes from variable features')
   s.features <- read.delim(opt$genelist_S_phase, header = FALSE)$V1
   g2m.features <- read.delim(opt$genelist_G2M_phase, header = FALSE)$V1
-  VariableFeatures(merged_obj) <- setdiff(object.features,c(s.features, g2m.features))
+  VariableFeatures(merged_obj) <- setdiff(VariableFeatures(merged_obj),c(s.features, g2m.features))
 }
 
 merged_obj <- SketchData(object = merged_obj, ncells = 1000, method = "LeverageScore", sketched.assay = "sketch")
@@ -71,13 +95,23 @@ if(opt$cellcycle_correction_flag == "1"){
 }
 merged_obj <- ScaleData(merged_obj, verbose = F)
 
-merged_obj <- RunBanksy(merged_obj, lambda = 0.2, assay = 'sketch', slot = 'data', features = 'variable',group = 'sampleid', split.scale = FALSE, k_geom = 50, dimx = 'x', dimy = 'y')
-merged_obj <- RunPCA(merged_obj, assay = 'BANKSY',verbose = F, npcs = 30)
-merged_obj <- FindNeighbors(merged_obj, dims = 1:30, reduction = "pca", assay = "BANKSY")
-merged_obj <- FindClusters(merged_obj, resolution = opt$resolution, cluster.name = "seurat_clusters_sketch", graph.name = "BANKSY_snn")
-merged_obj <- RunUMAP(merged_obj, dims = 1:30, reduction = "pca", assay = "BANKSY")
-merged_obj <- RunTSNE(merged_obj, dims = 1:30, reduction = "pca", assay = "BANKSY")
+if(opt$spatial_cluster == "Banksy"){
+  merged_obj[[assay]] <- JoinLayers(merged_obj[[assay]])
+  merged_obj <- RunBanksy(merged_obj, lambda = opt$lambda, assay = 'sketch', slot = 'data', features = 'variable',group = 'sampleid', split.scale = FALSE, k_geom = opt$k_geom, dimx = 'x', dimy = 'y')
+  merged_obj <- RunPCA(merged_obj, assay = 'BANKSY',verbose = F, npcs = 30)
+  merged_obj <- FindNeighbors(merged_obj, dims = 1:30, reduction = "pca", assay = "BANKSY")
+  merged_obj <- FindClusters(merged_obj, resolution = opt$resolution, cluster.name = "seurat_clusters_sketch", graph.name = "BANKSY_snn")
+  merged_obj <- RunUMAP(merged_obj, dims = 1:30, reduction = "pca", assay = "BANKSY")
+  merged_obj <- RunTSNE(merged_obj, dims = 1:30, reduction = "pca", assay = "BANKSY")
+} else {
+  merged_obj <- RunPCA(merged_obj, verbose = FALSE, npcs = 30)
+  merged_obj <- FindNeighbors(merged_obj, dims = 1:30)
+  merged_obj <- RunUMAP(merged_obj, dims = 1:30)
+  merged_obj <- RunTSNE(merged_obj, dims = 1:30)
+  merged_obj <- FindClusters(merged_obj, verbose = FALSE, resolution = opt$resolution)
+}
 
+DefaultAssay(merged_obj) <- assay
 merged_obj <- ProjectIntegration(object = merged_obj, 
                                  sketched.assay = "sketch",
                                  assay = assay, 
