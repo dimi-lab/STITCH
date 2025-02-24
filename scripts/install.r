@@ -28,7 +28,8 @@ install("future", prompt = FALSE)
 install("doFuture", prompt = FALSE)
 install("harmony", prompt = FALSE)
 install("DT", prompt = FALSE)
-
+install("arrow", prompt = FALSE)
+install("Liuy12/spacexr")
 
 
 requiredPacks <- c('optparse','scDblFinder','SoupX','ggplot2','patchwork','BPCells','presto','glmGamPoi','SeuratWrappers','Banksy','dplyr','openxlsx','rmdformats','rmarkdown','reshape2','gridExtra','ggplot2','future','doFuture','Seurat','SeuratObject','RColorBrewer','harmony','DT', 'hdf5r', 'grid')

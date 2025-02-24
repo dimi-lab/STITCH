@@ -290,6 +290,13 @@
       ],
       "Hash": "3918e6b40d27984ca4a99c73b92406c3"
     },
+    "CompQuadForm": {
+      "Package": "CompQuadForm",
+      "Version": "1.4.3",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Hash": "4594a396b693b8705d8dbb5491aca887"
+    },
     "ComplexHeatmap": {
       "Package": "ComplexHeatmap",
       "Version": "2.20.0",
@@ -835,6 +842,17 @@
       ],
       "Hash": "4ac8e423216b8b70cb9653d1b3f71eb9"
     },
+    "RcppGSL": {
+      "Package": "RcppGSL",
+      "Version": "0.3.13",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Requirements": [
+        "Rcpp",
+        "stats"
+      ],
+      "Hash": "e8fc7310d256a7b6c4de8e57ab76c55d"
+    },
     "RcppHNSW": {
       "Package": "RcppHNSW",
       "Version": "0.6.0",
@@ -870,6 +888,16 @@
       ],
       "Hash": "225157373f361daf85198a8d1ddaa733"
     },
+    "RcppParallel": {
+      "Package": "RcppParallel",
+      "Version": "5.1.10",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Requirements": [
+        "R"
+      ],
+      "Hash": "34ee3ba92c1b2df651980325523ed22a"
+    },
     "RcppProgress": {
       "Package": "RcppProgress",
       "Version": "0.4.2",
@@ -888,6 +916,22 @@
       ],
       "Hash": "c232938949fcd8126034419cc529333a"
     },
+    "RcppZiggurat": {
+      "Package": "RcppZiggurat",
+      "Version": "0.1.6",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Requirements": [
+        "R",
+        "Rcpp",
+        "RcppGSL",
+        "graphics",
+        "parallel",
+        "stats",
+        "utils"
+      ],
+      "Hash": "75b4a36aeeed440ad03b996081190703"
+    },
     "Rdpack": {
       "Package": "Rdpack",
       "Version": "2.6.1",
@@ -901,6 +945,20 @@
         "utils"
       ],
       "Hash": "24a964d2cf75ad25d7b843856c8d4c93"
+    },
+    "Rfast": {
+      "Package": "Rfast",
+      "Version": "2.1.4",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Requirements": [
+        "R",
+        "Rcpp",
+        "RcppArmadillo",
+        "RcppParallel",
+        "RcppZiggurat"
+      ],
+      "Hash": "4608fe675166f533e371deed8e7b5f35"
     },
     "Rhdf5lib": {
       "Package": "Rhdf5lib",
@@ -1820,6 +1878,17 @@
       ],
       "Hash": "24754fce82729ff85317dd195b6646a8"
     },
+    "dichromat": {
+      "Package": "dichromat",
+      "Version": "2.0-0.1",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Requirements": [
+        "R",
+        "stats"
+      ],
+      "Hash": "16e66f2a483e124af5fc6582d26005f7"
+    },
     "digest": {
       "Package": "digest",
       "Version": "0.6.37",
@@ -2001,6 +2070,20 @@
       "Source": "Repository",
       "Repository": "CRAN",
       "Hash": "aa5e1cd11c2d15497494c5292d7ffcc8"
+    },
+    "fields": {
+      "Package": "fields",
+      "Version": "16.3",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Requirements": [
+        "R",
+        "maps",
+        "methods",
+        "spam",
+        "viridisLite"
+      ],
+      "Hash": "2900d13ae2ee1dcf9f9cce088103667c"
     },
     "filelock": {
       "Package": "filelock",
@@ -2957,6 +3040,18 @@
       ],
       "Hash": "c6fafa6cccb1e1dfe7f7d122efd6e6a7"
     },
+    "locfdr": {
+      "Package": "locfdr",
+      "Version": "1.1-8",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Requirements": [
+        "graphics",
+        "splines",
+        "stats"
+      ],
+      "Hash": "2698cbc879db321e87ee97aa5c9abacd"
+    },
     "locfit": {
       "Package": "locfit",
       "Version": "1.5-9.10",
@@ -2989,6 +3084,31 @@
         "R"
       ],
       "Hash": "7ce2733a9826b3aeb1775d56fd305472"
+    },
+    "mapproj": {
+      "Package": "mapproj",
+      "Version": "1.2.11",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Requirements": [
+        "R",
+        "graphics",
+        "maps",
+        "stats"
+      ],
+      "Hash": "37090866afbdb09e6437ba0b25c307a2"
+    },
+    "maps": {
+      "Package": "maps",
+      "Version": "3.4.2.1",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Requirements": [
+        "R",
+        "graphics",
+        "utils"
+      ],
+      "Hash": "354a8094c634031421eeb5103f2e1f80"
     },
     "markdown": {
       "Package": "markdown",
@@ -3044,6 +3164,41 @@
         "rlang"
       ],
       "Hash": "e2817ccf4a065c5d9d7f2cfbe7c1d78c"
+    },
+    "metadat": {
+      "Package": "metadat",
+      "Version": "1.4-0",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Requirements": [
+        "R",
+        "mathjaxr",
+        "tools",
+        "utils"
+      ],
+      "Hash": "73ce3e47c650824dc4a514a399e48357"
+    },
+    "metafor": {
+      "Package": "metafor",
+      "Version": "4.8-0",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Requirements": [
+        "Matrix",
+        "R",
+        "digest",
+        "grDevices",
+        "graphics",
+        "mathjaxr",
+        "metadat",
+        "methods",
+        "nlme",
+        "numDeriv",
+        "pbapply",
+        "stats",
+        "utils"
+      ],
+      "Hash": "2b07f17fb19e15a76be9a37044229702"
     },
     "metap": {
       "Package": "metap",
@@ -3264,6 +3419,24 @@
         "plyr"
       ],
       "Hash": "82d32ebd548c6a4e7de73bab96411b3b"
+    },
+    "pals": {
+      "Package": "pals",
+      "Version": "1.9",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Requirements": [
+        "R",
+        "colorspace",
+        "dichromat",
+        "grDevices",
+        "graphics",
+        "mapproj",
+        "maps",
+        "methods",
+        "stats"
+      ],
+      "Hash": "4c1ef1aae47ca5414240368afbd94939"
     },
     "parallelly": {
       "Package": "parallelly",
@@ -3580,6 +3753,16 @@
         "robustbase"
       ],
       "Hash": "0a813d2f61e344db1e587f6195314e1d"
+    },
+    "quadprog": {
+      "Package": "quadprog",
+      "Version": "1.5-8",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Requirements": [
+        "R"
+      ],
+      "Hash": "5f919ae5e7f83a6f91dcf2288943370d"
     },
     "quantreg": {
       "Package": "quantreg",
@@ -4299,6 +4482,41 @@
         "utils"
       ],
       "Hash": "75940133cca2e339afce15a586f85b11"
+    },
+    "spacexr": {
+      "Package": "spacexr",
+      "Version": "2.2.1",
+      "Source": "GitHub",
+      "RemoteType": "github",
+      "RemoteHost": "api.github.com",
+      "RemoteUsername": "Liuy12",
+      "RemoteRepo": "spacexr",
+      "RemoteRef": "master",
+      "RemoteSha": "f193ec14ce42dd83f2207bea02bf32403fa06ed5",
+      "Requirements": [
+        "CompQuadForm",
+        "Matrix",
+        "R",
+        "Rfast",
+        "data.table",
+        "doParallel",
+        "dplyr",
+        "fields",
+        "foreach",
+        "ggplot2",
+        "knitr",
+        "locfdr",
+        "metafor",
+        "mgcv",
+        "pals",
+        "parallel",
+        "quadprog",
+        "readr",
+        "reshape2",
+        "rmarkdown",
+        "tibble"
+      ],
+      "Hash": "b926701f60d91b547033f3db9e898c16"
     },
     "spam": {
       "Package": "spam",
