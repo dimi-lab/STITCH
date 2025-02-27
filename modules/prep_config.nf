@@ -5,13 +5,13 @@ process WRITECONFIGFILE {
   publishDir(
     path: "${params.output_dir}/config/",
     mode: "copy",
-    pattern: "*.txt"
+    pattern: "config.txt"
   )
   
   input:
+  val samplesheet
   val workflowpath
   val authorname
-  val samplesheet
   val data_type
   val feature_list
   val output_dir
@@ -25,15 +25,22 @@ process WRITECONFIGFILE {
   val nFeature_cutoff
   val nCount_cutoff
   val nCell_cutoff
+  val norm_dimreduc
+  val norm_diff
   val cellcycle_correction_flag
   val genelist_S_phase
   val genelist_G2M_phase
   val merge_analysis
   val integration_analysis
+  val merge_only
+  val integration_only
   val integration_method
   val sketch_flag
   val resolution
   val vismethod
+  val spatial_cluster
+  val lambda
+  val k_geom
   val control_var
   val case_var
   val covariate_list
@@ -44,70 +51,62 @@ process WRITECONFIGFILE {
   val pct
   
   output:
-  path "config_QC.txt", emit: configfile_QC
-  path "config_loader.txt", emit: configfile_loader
-  path "config_clustering.txt", emit: configfile_clustering
-  path "config_markers.txt", emit: configfile_markers
-  path "config_tables.txt", emit: configfile_tables
-  path "config_report.txt", emit: configfile_report
+  path "config.txt"
 
   shell:
   """ 
-  ## QC config
-  echo "workflowpath=!{workflowpath}" > config_QC.txt
-  echo "data_type=!{data_type}" >> config_QC.txt
-  echo "ambient_RNA_removal_flag=!{ambient_RNA_removal_flag}" >> config_QC.txt
-  echo "doublet_removal_flag=!{doublet_removal_flag}" >> config_QC.txt
-  echo "adaptive_cutoff_flag=!{adaptive_cutoff_flag}" >> config_QC.txt
-  echo "mt_cutoff=!{mt_cutoff}" >> config_QC.txt
-  echo "hb_cutoff=!{hb_cutoff}" >> config_QC.txt
-  echo "nFeature_cutoff=!{nFeature_cutoff}" >> config_QC.txt
-  echo "nCount_cutoff=!{nCount_cutoff}" >> config_QC.txt
-  echo "nCell_cutoff=!{nCell_cutoff}" >> config_QC.txt
+  ## General
+  echo "samplesheet=!{samplesheet}" > config.txt
+  echo "workflowpath=!{workflowpath}" >> config.txt
+  echo "authorname=!{authorname}" >> config.txt
+  echo "data_type=!{data_type}" >> config.txt
+  echo "feature_list=!{feature_list}" >> config.txt
+  echo "output_dir=!{output_dir}" >> config.txt
+  echo "geneinfo=!{geneinfo}" >> config.txt
 
-  ## loader config
-  cp config_QC.txt config_loader.txt
-  echo "geneinfo=!{geneinfo}" >> config_loader.txt
-  echo "cellcycle_correction_flag=!{cellcycle_correction_flag}" >> config_loader.txt
-  echo "genelist_S_phase=!{genelist_S_phase}" >> config_loader.txt
-  echo "genelist_G2M_phase=!{genelist_G2M_phase}" >> config_loader.txt
+  ## QC
+  echo "qc_only=!{qc_only}" >> config.txt
+  echo "ambient_RNA_removal_flag=!{ambient_RNA_removal_flag}" >> config.txt
+  echo "doublet_removal_flag=!{doublet_removal_flag}" >> config.txt
+  echo "adaptive_cutoff_flag=!{adaptive_cutoff_flag}" >> config.txt
+  echo "mt_cutoff=!{mt_cutoff}" >> config.txt
+  echo "hb_cutoff=!{hb_cutoff}" >> config.txt
+  echo "nFeature_cutoff=!{nFeature_cutoff}" >> config.txt
+  echo "nCount_cutoff=!{nCount_cutoff}" >> config.txt
+  echo "nCell_cutoff=!{nCell_cutoff}" >> config.txt
 
-  ## clustering config
-  echo "workflowpath=!{workflowpath}" > config_clustering.txt
-  echo "samplesheet=!{samplesheet}" >> config_clustering.txt
-  echo "data_type=!{data_type}" >> config_clustering.txt
-  echo "resolution=!{resolution}" >> config_clustering.txt
-  echo "geneinfo=!{geneinfo}" >> config_clustering.txt
-  echo "cellcycle_correction_flag=!{cellcycle_correction_flag}" >> config_clustering.txt
-  echo "genelist_S_phase=!{genelist_S_phase}" >> config_clustering.txt
-  echo "genelist_G2M_phase=!{genelist_G2M_phase}" >> config_clustering.txt
-  echo "integration_method=!{integration_method}" >> config_clustering.txt
-  echo "sketch_flag=!{sketch_flag}" >> config_clustering.txt
+  ## Normalization
+  echo "norm_dimreduc=!{norm_dimreduc}" >> config.txt
+  echo "norm_diff=!{norm_diff}" >> config.txt
+  echo "cellcycle_correction_flag=!{cellcycle_correction_flag}" >> config.txt
+  echo "genelist_S_phase=!{genelist_S_phase}" >> config.txt
+  echo "genelist_G2M_phase=!{genelist_G2M_phase}" >> config.txt
 
-  ## findmarkers config
-  echo "workflowpath=!{workflowpath}" > config_markers.txt
-  echo "data_type=!{data_type}" >> config_markers.txt
-  echo "control_var=!{control_var}" >> config_markers.txt
-  echo "case_var=!{case_var}" >> config_markers.txt
-  echo "covariate_list=!{covariate_list}" >> config_markers.txt
-  echo "test=!{test}" >> config_markers.txt
+  ## Analysis strategy
+  echo "merge_analysis=!{merge_analysis}" >> config.txt
+  echo "integration_analysis=!{integration_analysis}" >> config.txt
+  echo "merge_only=!{merge_only}" >> config.txt
+  echo "integration_only=!{integration_only}" >> config.txt
 
-  ## combine_table config
-  echo "workflowpath=!{workflowpath}" > config_tables.txt
-  echo "geneinfo=!{geneinfo}" >> config_tables.txt
-  echo "fc=!{fc}" >> config_tables.txt
-  echo "pval=!{pval}" >> config_tables.txt
-  echo "pval_flag=!{pval_flag}" >> config_tables.txt
-  echo "pct=!{pct}" >> config_tables.txt
+  ## Integration strategy
+  echo "integration_method=!{integration_method}" >> config.txt
+  echo "sketch_flag=!{sketch_flag}" >> config.txt
 
-  ## report config
-  echo "workflowpath=!{workflowpath}" > config_report.txt
-  echo "data_type=!{data_type}" >> config_report.txt
-  echo "authorname=!{authorname}" >> config_report.txt
-  echo "samplesheet=!{samplesheet}" >> config_report.txt
-  echo "sketch_flag=!{sketch_flag}" >> config_report.txt
-  echo "feature_list=!{feature_list}" >> config_report.txt
-  echo "cellcycle_correction_flag=!{cellcycle_correction_flag}" >> config_report.txt
-  echo "vismethod=!{vismethod}" >> config_report.txt
+  ## Clustering
+  echo "resolution=!{resolution}" >> config.txt
+  echo "vismethod=!{vismethod}" >> config.txt
+  echo "spatial_cluster=!{spatial_cluster}" >> config.txt
+  echo "lambda=!{lambda}" >> config.txt
+  echo "k_geom=!{k_geom}" >> config.txt 
+
+  ## Differential expression
+  echo "control_var=!{control_var}" >> config.txt
+  echo "case_var=!{case_var}" >> config.txt
+  echo "covariate_list=!{covariate_list}" >> config.txt
+  echo "test=!{test}" >> config.txt
+  echo "fc=!{fc}" >> config.txt
+  echo "pval=!{pval}" >> config.txt
+  echo "pval_flag=!{pval_flag}" >> config.txt
+  echo "pct=!{pct}" >> config.txt
   """
 }

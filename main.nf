@@ -2,7 +2,7 @@
 
 
 // Load modules
-//include { WRITECONFIGFILE } from './modules/prep_config.nf'
+include { WRITECONFIGFILE } from './modules/prep_config.nf'
 
 include { RUNQC; QCSUMMARY; LOADSAMPLE } from './modules/qc.nf'
 
@@ -16,7 +16,7 @@ samples_ch = Channel.fromPath(params.samplesheet)
 
 workflow {
 
-    //WRITECONFIGFILE(params.workflowpath,params.authorname,params.samplesheet,params.data_type,params.feature_list,params.output_dir,params.geneinfo,params.qc_only,params.ambient_RNA_removal_flag,params.doublet_removal_flag,params.adaptive_cutoff_flag,params.mt_cutoff,params.hb_cutoff,params.nFeature_cutoff,params.nCount_cutoff,params.nCell_cutoff,params.cellcycle_correction_flag,params.genelist_S_phase,params.genelist_G2M_phase,params.merge_analysis,params.integration_analysis,params.integration_method,params.sketch_flag,params.resolution,params.vismethod,params.control_var,params.case_var,params.covariate_list,params.test,params.fc,params.pval,params.pval_flag,params.pct)
+    WRITECONFIGFILE(params.samplesheet, params.workflowpath, params.authorname, params.data_type, params.feature_list, params.output_dir, params.geneinfo, params.qc_only, params.ambient_RNA_removal_flag, params.doublet_removal_flag, params.adaptive_cutoff_flag, params.mt_cutoff, params.hb_cutoff, params.nFeature_cutoff, params.nCount_cutoff, params.nCell_cutoff, params.norm_dimreduc, params.norm_diff, params.cellcycle_correction_flag, params.genelist_S_phase, params.genelist_G2M_phase, params.merge_analysis, params.integration_analysis, params.merge_only, params.integration_only, params.integration_method, params.sketch_flag, params.resolution, params.vismethod, params.spatial_cluster, params.lambda, params.k_geom, params.control_var, params.case_var, params.covariate_list, params.test, params.fc, params.pval, params.pval_flag, params.pct)
     
     RUNQC(params.workflowpath, params.data_type, params.ambient_RNA_removal_flag,params.doublet_removal_flag,params.adaptive_cutoff_flag,params.mt_cutoff,params.hb_cutoff,params.nFeature_cutoff,params.nCount_cutoff,params.nCell_cutoff, samples_ch)
 
