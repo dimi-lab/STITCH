@@ -25,7 +25,7 @@ opt <- parse_args(opt_parser)
 
 library(BPCells)
 library(Seurat)
-options(future.globals.maxSize = 500*1024^3,stringsAsFactors = FALSE)
+options(stringsAsFactors = FALSE)
 
 reference <- readRDS(opt$reference)
 query <- readRDS(opt$query)

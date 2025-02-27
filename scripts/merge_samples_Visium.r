@@ -20,7 +20,11 @@ option_list <- list(
   make_option(c("--lambda"), type="numeric", default=0.2, 
               help="lambda parameter for Banksy. Influence of the neighborhood. Larger values yield more spatially coherent domains. [default= %default]", metavar="numeric"),
   make_option(c("--k_geom"), type="numeric", default=50, 
-              help="k_geom parameter for Banksy. Local neighborhood size. Larger values will yield larger domains. [default= %default]", metavar="numeric")
+              help="k_geom parameter for Banksy. Local neighborhood size. Larger values will yield larger domains. [default= %default]", metavar="numeric"),
+  make_option(c("--parallel_strategy"), type="character", default=NULL, 
+              help="Parallel strategy for future. See help page for plan for details. [default= %default]", metavar="character"),
+  make_option(c("--nworkers"), type="integer", default=NULL, 
+              help="Number of workers/cpus used for future. [default= %default]", metavar="integer")
   )
 
 opt_parser <- OptionParser(option_list=option_list)
@@ -36,7 +40,7 @@ library(doFuture)
 library(Banksy)
 options(future.globals.maxSize = 500*1024^3,stringsAsFactors = FALSE)
 registerDoFuture()
-plan("multicore", workers = 5)
+plan(opt$parallel_strategy, workers = as.integer(opt$nworkers))
 
 remove_object <- function(object_name){
   for(i in object_name) assign(i, NULL,envir = .GlobalEnv)

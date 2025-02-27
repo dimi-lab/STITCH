@@ -14,7 +14,11 @@ option_list <- list(
   make_option(c("--sampleid"), type="character", default=NULL, 
               help="Sample name for deconvolution. [default= %default]", metavar="character"),
   make_option(c("--doublet_mode"), type="character", default=NULL, 
-              help="doublet mode for RCTD, can be either doublet, multi or full. See help page for run.RCTD for details. [default= %default]", metavar="character")
+              help="doublet mode for RCTD, can be either doublet, multi or full. See help page for run.RCTD for details. [default= %default]", metavar="character"),
+  make_option(c("--parallel_strategy"), type="character", default=NULL, 
+              help="Parallel strategy for future. See help page for plan for details. [default= %default]", metavar="character"),
+  make_option(c("--nworkers"), type="integer", default=NULL, 
+              help="Number of workers/cpus used for future. [default= %default]", metavar="integer")
 )
 
 opt_parser <- OptionParser(option_list=option_list)
@@ -25,8 +29,7 @@ library(spacexr)
 library(future)
 library(doFuture)
 registerDoFuture()
-plan("multicore", workers = 10)
-
+plan(opt$parallel_strategy, workers = as.integer(opt$nworkers))
 options(future.globals.maxSize = 500*1024^3,stringsAsFactors = FALSE)
 
 remove_object <- function(object_name){

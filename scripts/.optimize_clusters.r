@@ -73,16 +73,16 @@ ggsave("./rogue_score.pdf", gp, width = 8, height = 8, useDingbats=FALSE)
 # elbow_point
 # 
 # #devtools::install_github("etam4260/kneedle")
-# library(kneedle, lib.loc = "/research/bsi/projects/staff_analysis/m182980/Rlib4.2.2")
+# library(kneedle) 
 # smerc
 # kneedle(df$n_clusters, df$rogue_score)
 # 
 # devtools::install_github("likelet/VSOLassoBag")
-# library(VSOLassoBag, lib.loc = "/research/bsi/projects/staff_analysis/m182980/Rlib4.2.2")
+# library(VSOLassoBag)
 # df1 <- data.frame(variable = n_clusters, Frequency = df$rogue_score)
 # VSOLassoBag::kneedle(df1)
 # 
-# library(smerc, lib.loc = "/research/bsi/projects/staff_analysis/m182980/Rlib4.2.2")
+# library(smerc) 
 # elbow_point(df$n_clusters, df$rogue_score)
 
 saveRDS(list(res_list, n_clusters,rogue_list), "./rogue_objs_aggregated_obj_by_sample.rds")

@@ -14,7 +14,11 @@ option_list <- list(
   make_option(c("--genelist_S_phase"), type="character", default="NA", 
               help="Path to gene list (Gene Symbols) for cell-cycle S-phase, one gene per line. [default= %default]", metavar="character"),
   make_option(c("--genelist_G2M_phase"), type="character", default="NA", 
-              help="Path to gene list (Gene Symbols) for cell-cycle G2M-phase, one gene per line. [default= %default]", metavar="character")
+              help="Path to gene list (Gene Symbols) for cell-cycle G2M-phase, one gene per line. [default= %default]", metavar="character"),
+  make_option(c("--parallel_strategy"), type="character", default=NULL, 
+              help="Parallel strategy for future. See help page for plan for details. [default= %default]", metavar="character"),
+  make_option(c("--nworkers"), type="integer", default=NULL, 
+              help="Number of workers/cpus used for future. [default= %default]", metavar="integer")
   )
 
 opt_parser <- OptionParser(option_list=option_list)
@@ -33,7 +37,7 @@ library(future)
 library(doFuture)
 options(future.globals.maxSize = 500*1024^3,stringsAsFactors = FALSE)
 registerDoFuture()
-plan("multicore", workers = 5)
+plan(opt$parallel_strategy, workers = as.integer(opt$nworkers))
 
 remove_object <- function(object_name){
   for(i in object_name) assign(i, NULL,envir = .GlobalEnv)

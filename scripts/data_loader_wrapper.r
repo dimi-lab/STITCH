@@ -52,7 +52,7 @@ library(scDblFinder)
 library(ggplot2)
 library(Seurat)
 library(patchwork)
-options(stringsAsFactors = F, future.globals.maxSize=50*1024^3)
+options(stringsAsFactors = FALSE)
 
 for(i in c("resolution", "mt_cutoff", "hb_cutoff", "nFeature_cutoff", "nCount_cutoff","nCell_cutoff")) opt[[i]] <- as.numeric(opt[[i]])
 source(file.path(opt$workflowpath, "scripts/helper_functions.r"))

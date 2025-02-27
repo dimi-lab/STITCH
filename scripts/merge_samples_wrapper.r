@@ -25,7 +25,13 @@ option_list <- list(
   make_option(c("--lambda"), type="numeric", default=0.2, 
               help="lambda parameter for Banksy. Influence of the neighborhood. Larger values yield more spatially coherent domains. [default= %default]", metavar="numeric"),
   make_option(c("--k_geom"), type="numeric", default=50, 
-              help="k_geom parameter for Banksy. Local neighborhood size. Larger values will yield larger domains. [default= %default]", metavar="numeric"))
+              help="k_geom parameter for Banksy. Local neighborhood size. Larger values will yield larger domains. [default= %default]", metavar="numeric"),
+  make_option(c("--parallel_strategy"), type="character", default=NULL, 
+              help="Parallel strategy for future. See help page for plan for details. [default= %default]", metavar="character"),
+  make_option(c("--nworkers"), type="integer", default=NULL, 
+              help="Number of workers/cpus used for future. [default= %default]", metavar="integer")
+  )
+
 
 opt_parser <- OptionParser(option_list=option_list)
 opt <- parse_args(opt_parser)
@@ -43,7 +49,9 @@ if(opt$data_type == 'scRNAseq') {
                      "--cellcycle_correction_flag", opt$cellcycle_correction_flag,
                      "--genelist_S_phase", opt$genelist_S_phase,
                      "--genelist_G2M_phase", opt$genelist_G2M_phase, 
-                     "--norm_dimreduc", opt$norm_dimreduc, sep = " "
+                     "--norm_dimreduc", opt$norm_dimreduc,
+                     "--parallel_strategy", opt$parallel_strategy,
+                     "--nworkers", opt$nworkers, sep = " "
     )
     system(command, wait = TRUE)
   } else{
@@ -53,7 +61,9 @@ if(opt$data_type == 'scRNAseq') {
                      "--resolution", opt$resolution,
                      "--cellcycle_correction", opt$cellcycle_correction,
                      "--genelist_S_phase", opt$genelist_S_phase,
-                     "--genelist_G2M_phase", opt$genelist_G2M_phase, sep = " "
+                     "--genelist_G2M_phase", opt$genelist_G2M_phase,
+                     "--parallel_strategy", opt$parallel_strategy,
+                     "--nworkers", opt$nworkers, sep = " "
     )
     system(command, wait = TRUE)
   }
@@ -71,7 +81,9 @@ if(opt$data_type == 'Visium') {
                      "--norm_dimreduc", opt$norm_dimreduc, 
                      "--spatial_cluster", opt$spatial_cluster,
                      "--lambda", opt$lambda,
-                     "--k_geom", opt$k_geom, sep = " "
+                     "--k_geom", opt$k_geom,
+                     "--parallel_strategy", opt$parallel_strategy,
+                     "--nworkers", opt$nworkers, sep = " "
     )
     system(command, wait = TRUE)
   } else{
@@ -85,7 +97,9 @@ if(opt$data_type == 'Visium') {
                      "--norm_dimreduc", opt$norm_dimreduc, 
                      "--spatial_cluster", opt$spatial_cluster,
                      "--lambda", opt$lambda,
-                     "--k_geom", opt$k_geom, sep = " "
+                     "--k_geom", opt$k_geom,
+                     "--parallel_strategy", opt$parallel_strategy,
+                     "--nworkers", opt$nworkers, sep = " "
     )
     system(command, wait = TRUE)
   }
