@@ -11,8 +11,6 @@ option_list <- list(
               help="Qeury assay to use to perform deconvolution [default= %default]", metavar="character"),
   make_option(c("--refdata"), type="character", default=NULL, 
               help="Character indicating reference data, e.g. cell type, to use for deconvolution. Must exist in the metadata of the reference seurat object. [default= %default]", metavar="character"),
-  make_option(c("--sampleid"), type="character", default=NULL, 
-              help="Sample name for deconvolution. [default= %default]", metavar="character"),
   make_option(c("--doublet_mode"), type="character", default=NULL, 
               help="doublet mode for RCTD, can be either doublet, multi or full. See help page for run.RCTD for details. [default= %default]", metavar="character"),
   make_option(c("--parallel_strategy"), type="character", default=NULL, 
@@ -43,10 +41,9 @@ query <- readRDS(opt$query)
 
 reference <- Reference(reference[[opt$reference_assay]]$counts, as.factor(reference@meta.data[[opt$refdata]]))
 
-query_sel <- subset(query, sampleid == opt$sampleid)
-remove_object("query")
-bulk_spatial <- SpatialRNA(GetTissueCoordinates(query_sel,image = opt$sampleid), query_sel[[opt$query_assay]]$counts)
+bulk_spatial <- SpatialRNA(GetTissueCoordinates(query)[,1:2], query[[opt$query_assay]]$counts)
 myRCTD <- create.RCTD(bulk_spatial, reference, max_cores = 10, CELL_MIN_INSTANCE=min(table(reference@cell_types)), UMI_min = 0, counts_MIN = 0)
 myRCTD <- run.RCTD(myRCTD, doublet_mode = opt$doublet_mode)
 
-saveRDS(myRCTD@results, paste0("RCTD_results_", opt$sampleid,".rds"))
+message("saving RCTD object")
+saveRDS(myRCTD@results,gsub(".rds","_RCTD_results.rds",basename(opt$query)))

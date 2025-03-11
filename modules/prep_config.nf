@@ -49,6 +49,21 @@ process WRITECONFIGFILE {
   val pval
   val pval_flag
   val pct
+  val reference_deconvolution
+  val reference_assay_deconvolution
+  val query_assay_deconvolution
+  val refdata_deconvolution
+  val doublet_mode
+  val parallel_strategy
+  val nworkers
+  val reference_mapping
+  val reference_assay_mapping
+  val query_assay_mapping
+  val refdata_mapping
+  val reference_reduction
+  val normalization_method
+  val prediction_assay
+  val reduction_model
   
   output:
   path "config.txt"
@@ -81,6 +96,27 @@ process WRITECONFIGFILE {
   echo "cellcycle_correction_flag=!{cellcycle_correction_flag}" >> config.txt
   echo "genelist_S_phase=!{genelist_S_phase}" >> config.txt
   echo "genelist_G2M_phase=!{genelist_G2M_phase}" >> config.txt
+
+  ## Deconvolution
+  echo "reference_deconvolution=!{reference_deconvolution}" >> config.txt
+  echo "reference_assay_deconvolution=!{reference_assay_deconvolution}" >> config.txt
+  echo "query_assay_deconvolution=!{query_assay_deconvolution}" >> config.txt
+  echo "refdata_deconvolution=!{refdata_deconvolution}" >> config.txt
+  echo "doublet_mode=!{doublet_mode}" >> config.txt
+
+  ## Parallel
+  echo "parallel_strategy=!{parallel_strategy}" >> config.txt
+  echo "nworkers=!{nworkers}" >> config.txt
+
+  ## Mapping
+  echo "reference_mapping=!{reference_mapping}" >> config.txt
+  echo "reference_assay_mapping=!{reference_assay_mapping}" >> config.txt
+  echo "query_assay_mapping=!{query_assay_mapping}" >> config.txt
+  echo "refdata_mapping=!{refdata_mapping}" >> config.txt
+  echo "reference_reduction=!{reference_reduction}" >> config.txt
+  echo "normalization_method=!{normalization_method}" >> config.txt
+  echo "prediction_assay=!{prediction_assay}" >> config.txt
+  echo "reduction_model=!{reduction_model}" >> config.txt
 
   ## Analysis strategy
   echo "merge_analysis=!{merge_analysis}" >> config.txt

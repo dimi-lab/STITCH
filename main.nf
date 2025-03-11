@@ -6,7 +6,7 @@ include { WRITECONFIGFILE } from './modules/prep_config.nf'
 
 include { RUNQC; QCSUMMARY; LOADSAMPLE } from './modules/qc.nf'
 
-include { INTEGRATESAMPLES; FINDMARKERS; COMBINETABLES; FINALREPORT } from './modules/analysis.nf'
+include { DECONVOLUTION; MAPPING; INTEGRATESAMPLES; FINDMARKERS; COMBINETABLES; FINALREPORT } from './modules/analysis.nf'
 
 include { MERGESAMPLES; FINDMARKERS as FINDMARKERS_MERGE; COMBINETABLES as COMBINETABLES_MERGE; FINALREPORT as FINALREPORT_MERGE } from './modules/analysis.nf'
 
@@ -26,11 +26,45 @@ workflow {
         
         LOADSAMPLE(params.workflowpath, params.data_type, params.ambient_RNA_removal_flag,params.doublet_removal_flag,params.adaptive_cutoff_flag,params.mt_cutoff,params.hb_cutoff,params.nFeature_cutoff,params.nCount_cutoff,params.nCell_cutoff,params.geneinfo, params.cellcycle_correction_flag, params.genelist_S_phase, params.genelist_G2M_phase, QCSUMMARY.output.min_median_umi, params.norm_dimreduc, params.norm_diff,samples_ch)
 
-        if (params.integration_analysis) {
+        if (params.deconvolution_analysis) {
+            
+            DECONVOLUTION(params$reference_deconvolution, params$query_deconvolution, params$query_assay_deconvolution, params$reference_assay_deconvolution, params$refdata_deconvolution, params$doublet_mode, params$parallel_strategy, params$nworkers, LOADSAMPLE.output.seurat_obj.collect(), samples_ch)
 
-            INTEGRATESAMPLES(params.workflowpath, params.samplesheet,params.data_type, params.resolution,params.geneinfo, params.cellcycle_correction_flag, params.genelist_S_phase, params.genelist_G2M_phase, params.integration_method, params.sketch_flag, params.norm_dimreduc, params.spatial_cluster, params.lambda, params.k_geom, LOADSAMPLE.output.seurat_obj.collect())
+        }
 
-            if (!params.integration_only) {
+        if (params.mapping_analysis) {
+            
+            MAPPING(params.reference_mapping, params.query_mapping, params.reference_assay_mapping, params.query_assay_mapping, params.reference_reduction, params.normalization_method, params.refdata_mapping, params.prediction_assay, params.reduction_model, LOADSAMPLE.output.seurat_obj.collect(), samples_ch)
+
+            if (params.integration_analysis) {
+
+                INTEGRATESAMPLES(params.workflowpath, params.samplesheet,params.data_type, params.resolution,params.geneinfo, params.cellcycle_correction_flag, params.genelist_S_phase, params.genelist_G2M_phase, params.integration_method, params.sketch_flag, params.norm_dimreduc, params.spatial_cluster, params.lambda, params.k_geom, MAPPING.output.seurat_obj.collect())
+
+            }
+
+            if (params.merge_analysis) {
+
+                MERGESAMPLES(params.workflowpath, params.samplesheet,params.data_type, params.resolution,params.geneinfo, params.cellcycle_correction_flag, params.genelist_S_phase, params.genelist_G2M_phase, params.sketch_flag, params.norm_dimreduc, params.spatial_cluster, params.lambda, params.k_geom, MAPPING.output.seurat_obj.collect())
+
+            }
+
+        } else {
+
+            if (params.integration_analysis) {
+
+                INTEGRATESAMPLES(params.workflowpath, params.samplesheet,params.data_type, params.resolution,params.geneinfo, params.cellcycle_correction_flag, params.genelist_S_phase, params.genelist_G2M_phase, params.integration_method, params.sketch_flag, params.norm_dimreduc, params.spatial_cluster, params.lambda, params.k_geom, LOADSAMPLE.output.seurat_obj.collect())
+
+            }
+
+            if (params.merge_analysis) {
+
+                MERGESAMPLES(params.workflowpath, params.samplesheet,params.data_type, params.resolution,params.geneinfo, params.cellcycle_correction_flag, params.genelist_S_phase, params.genelist_G2M_phase, params.sketch_flag, params.norm_dimreduc, params.spatial_cluster, params.lambda, params.k_geom, LOADSAMPLE.output.seurat_obj.collect())
+
+            }
+        }
+
+        if (params.integration_analysis && !params.integration_only) {
+            
             cluster_ch = INTEGRATESAMPLES.output.seurat_clusters
             .splitCsv(header: true, sep: '\t')
             .map { row -> row.clusternum }
@@ -56,15 +90,10 @@ workflow {
 
             FINALREPORT(params.workflowpath, params.data_type, params.authorname, params.samplesheet, params.sketch_flag, params.feature_list, params.cellcycle_correction_flag, params.vismethod, INTEGRATESAMPLES.output.integrated_obj, on_disk_mat, COMBINETABLES.output.marker_gene_table_filter, diff_gene_table_filter, "integrate")
 
-            }
-
         }
 
-        if (params.merge_analysis) {
+        if (params.merge_analysis && !params.merge_only) {
 
-            MERGESAMPLES(params.workflowpath, params.samplesheet,params.data_type, params.resolution,params.geneinfo, params.cellcycle_correction_flag, params.genelist_S_phase, params.genelist_G2M_phase, params.sketch_flag, params.norm_dimreduc, params.spatial_cluster, params.lambda, params.k_geom, LOADSAMPLE.output.seurat_obj.collect())
-
-            if (!params.merge_only) {
 			cluster_merge_ch = MERGESAMPLES.output.seurat_clusters
             .splitCsv(header: true, sep: '\t')
             .map { row -> row.clusternum }
@@ -89,7 +118,7 @@ workflow {
                 }
 
             FINALREPORT_MERGE(params.workflowpath, params.data_type, params.authorname, params.samplesheet, params.sketch_flag, params.feature_list, params.cellcycle_correction_flag, params.vismethod, MERGESAMPLES.output.merged_obj, on_disk_mat_merge, COMBINETABLES_MERGE.output.marker_gene_table_filter, diff_gene_table_filter_merge,"merge")
-            }
+
         }
     }
 }

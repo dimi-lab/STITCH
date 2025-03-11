@@ -1,3 +1,4 @@
+renv::load(Sys.getenv("PROJECT_DIR"))
 library('optparse')
 option_list <- list(                                    
   make_option(c("--reference"), type="character", default=NULL, 

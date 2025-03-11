@@ -1,3 +1,61 @@
+process DECONVOLUTION {
+  cpus 5
+  memory '50 GB'
+
+  publishDir(
+    path: "${params.output_dir}/deconvolution/",
+    mode: "copy"
+  )
+  
+  input:
+  val reference_deconvolution
+  val query_deconvolution
+  val query_assay_deconvolution
+  val reference_assay_deconvolution
+  val refdata_deconvolution
+  val doublet_mode
+  val parallel_strategy
+  val nworkers
+  path seurat_obj_collect
+  tuple val(sampleid), val(condition), path(secondary_output)
+
+	output:
+  path "${sampleid}_RCTD_results.rds"
+
+	script:
+	"""
+  export PROJECT_DIR=${projectDir}
+	Rscript ${projectDir}/scripts/deconvolution.r --reference $reference_deconvolution --query $query_deconvolution --reference_assay $reference_assay_deconvolution --query_assay $query_assay_deconvolution --refdata $refdata --doublet_mode $doublet_mode --parallel_strategy $parallel_strategy --nworkers $nworkers
+	"""
+}
+
+process MAPPING {
+  cpus 5
+  memory '50 GB'
+
+  input:
+  val reference_mapping
+  val query_mapping
+  val reference_assay_mapping
+  val query_assay_mapping
+  val reference_reduction
+  val normalization_method
+  val refdata_mapping
+  val prediction_assay
+  val reduction_model
+  path seurat_obj_collect
+  tuple val(sampleid), val(condition), path(secondary_output)
+
+  output:
+  path "${sampleid}_mapped_to_ref.rds", emit: seurat_obj
+
+  script:
+  """
+  export PROJECT_DIR=${projectDir}
+  Rscript ${projectDir}/scripts/map_to_reference.r --reference $reference_mapping --query $query_mapping --reference_assay $reference_assay_mapping --query_assay $query_assay_mapping --reference_reduction $reference_reduction --normalization_method $normalization_method --refdata $refdata_mapping --prediction_assay $prediction_assay --reduction_model $reduction_model
+  """
+}
+
 process INTEGRATESAMPLES {
   cpus 5
   memory '50 GB'

@@ -17,6 +17,12 @@ params {
   // Path to gene level annotation file. This is used to add feature level meta data
   geneinfo = "${projectDir}/docs/human_gene_info_2020A.tsv"
   
+  // Parallel parameters 
+  // Used by DECONVOLUTION, INTEGRATESAMPLES and MERGESAMPLES
+  // Strategy can be either multisession or multicore
+  parallel_strategy = "multisession"
+  nworkers = 5
+
   // QC
   qc_only = true
   // "0" or "1" to indicate whether to perform ambient RNA removal/correction using SoupX
@@ -57,6 +63,43 @@ params {
   // path to gene list (gene symbols) for cell-cycle G2M-phase, one gene per line
   // required if cellcycle_correction is set to "1"
   genelist_G2M_phase = "${projectDir}/docs/G2M_genes_human.tsv"
+
+  // Deconvolution-analysis parameters
+  // Deconvlution analysis is recommended for spatial data
+  // Deconvolution is performed using spacexr/RCTD
+  deconvolution_analysis = false
+  // Path to reference seurat object in .rds format
+  reference_deconvolution = "NA"
+  // Assay of the reference used for deconvolution
+  reference_assay_deconvolution = "Spatial"
+  // Assay of the query used for deconvolution
+  query_assay_deconvolution = "Spatial"
+  // Character indicating reference data, e.g. cell type, to use for deconvolution
+  refdata_deconvolution = "NA"
+  // doublet mode for RCTD, can be either doublet, multi or full
+  doublet_mode = "full"
+
+  // Mapping-analysis parameters
+  // Mapping analysis is recommended for scRNAseq data
+  // Mapping is performed using transfer anchors from Seurat
+  mapping_analysis = false
+  // Path to reference seurat object in .rds format
+  reference_mapping = "NA"
+  // Assay to use to perform mapping for reference
+  reference_assay_mapping = "RNA"
+  // Assay to use to perform mapping for query
+  query_assay_mapping = "RNA"
+  // Character or characters seperated by ',' indicating reference data to use for mapping
+  refdata_mapping = "NA"
+  // Name of dimensional reduction to use from the reference
+  reference_reduction = "pca"
+  // Name of normalization method used: LogNormalize or SCT
+  // SCT assay for integrated reference is currently not compatible
+  normalization_method = "LogNormalize"
+  // 0 or 1 indicating whether to add prediction assay to the seurat object
+  prediction_assay = "1"
+  // DimReduc object to use from the reference data to project UMAP
+  reduction_model = "umap"
 
   // Analysis strategy
   // whether to perform merge-based analysis
