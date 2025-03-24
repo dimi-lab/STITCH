@@ -207,7 +207,7 @@ if(ncol(sampleinfo) >3){
 ## Feature gene expression
 
 ```{r, echo=FALSE}
-if(file.exists(as.character(opt$feature_list))) genelist_flag <- TRUE else {
+if(opt$feature_list != "NA") genelist_flag <- TRUE else {
   genelist_flag <- FALSE
   featureplot_feature_width <- feature_gene_violin_width <- default_width
   featureplot_feature_height <- feature_gene_violin_height <- default_height
