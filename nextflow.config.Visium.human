@@ -64,6 +64,12 @@ params {
   // required if cellcycle_correction is set to "1"
   genelist_G2M_phase = "${projectDir}/docs/G2M_genes_human.tsv"
 
+  // Analysis to identify spatially variable genes (SVGs)
+  // Only applicable to spatial data
+  svg_analysis = true
+  // Method to use for SVG idenfication, either markvariogram or moransi
+  svg_method = "moransi"
+
   // Deconvolution-analysis parameters
   // Deconvlution analysis is recommended for spatial data
   // Deconvolution is performed using spacexr/RCTD
@@ -133,6 +139,9 @@ params {
   k_geom = 18
 
   // Differential expression
+  // 0 or 1 indicating whether to perform pseudo-bulk
+  // based analysis. Could be helpful if there are many samples per condition
+  pseudobulk_flag = "0"
   // Character value specifying control group for differential expression analysis
   // Set to NA to disable
   control_var = "Control"
@@ -149,6 +158,8 @@ params {
   covariate_list = "NA"
   // Denotes which statistical test to use
   // refer to FindMarkers function for more details
+  // if pseudobulk is enabled, recommend to use tests designed for bulk
+  // analysis, e.g. DESeq2, edgeR, limma, etc.
   test = "wilcox"
   // fold change cutoff to identify differentially expressed genes
   fc = 2

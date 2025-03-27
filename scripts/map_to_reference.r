@@ -3,8 +3,8 @@ library('optparse')
 option_list <- list(                                    
   make_option(c("--reference"), type="character", default=NULL, 
               help="Path to reference seurat object in .rds format. [default= %default]", metavar="character"),
-  make_option(c("--query"), type="character", default=NULL, 
-              help="Path to query seurat object. [default= %default]", metavar="character"),
+  make_option(c("--sampleid"), type="character", default=NULL, 
+              help="Sample id. [default= %default]", metavar="character"),
   make_option(c("--reference_assay"), type="character", default=NULL, 
               help="Assay to use to perform mapping for reference. [default= %default]", metavar="character"),
   make_option(c("--query_assay"), type="character", default=NULL, 
@@ -29,7 +29,7 @@ library(Seurat)
 options(stringsAsFactors = FALSE)
 
 reference <- readRDS(opt$reference)
-query <- readRDS(opt$query)
+query <- readRDS(paste0(opt$sampleid, ".rds"))
 DefaultAssay(reference) <- opt$reference_assay
 DefaultAssay(query) <- opt$query_assay
 ref_vars <- strsplit(opt$refdata, ",")[[1]]
@@ -75,4 +75,4 @@ query <- ProjectUMAP(
 )
 
 message("saving seurat object")
-saveRDS(query,gsub(".rds","_mapped_to_ref.rds",basename(opt$query)))
+saveRDS(query,paste0(opt$sampleid,"_mapped_to_ref.rds"))

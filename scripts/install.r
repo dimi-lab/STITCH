@@ -30,7 +30,8 @@ install("harmony", prompt = FALSE)
 install("DT", prompt = FALSE)
 install("arrow", prompt = FALSE)
 install("Liuy12/spacexr")
-
+install("DESeq2")
+install("Rfast2")
 
 requiredPacks <- c('optparse','scDblFinder','SoupX','ggplot2','patchwork','BPCells','presto','glmGamPoi','SeuratWrappers','Banksy','dplyr','openxlsx','rmdformats','rmarkdown','reshape2','gridExtra','ggplot2','future','doFuture','Seurat','SeuratObject','RColorBrewer','harmony','DT', 'hdf5r', 'grid')
 for(i in requiredPacks){

@@ -5,6 +5,8 @@ option_list <- list(
               help="workflow path. [default= %default]", metavar="character"),
   make_option(c("--data_type"), type="character", default=NULL, 
               help="data type. [default= %default]", metavar="character"),
+  make_option(c("--pseudobulk_flag"), type="character", default=NULL, 
+              help="0 or 1 indicating whether to perform pseudo-bulk based analysis. [default= %default]", metavar="character"),
   make_option(c("--control_var"), type="character", default=NULL, 
               help="control_var. [default= %default]", metavar="character"),
   make_option(c("--case_var"), type="character", default=NULL, 
@@ -34,7 +36,7 @@ seurat_clusters_condition <- read.delim(opt$seurat_clusters_condition, header = 
 condition <- seurat_clusters_condition$condition
 seurat_clusters <- seurat_clusters_condition$seurat_clusters
 
-if(opt$sketch_flag == "1"){
+if(opt$sketch_flag == "1" & opt$pseudobulk_flag == "0"){
   assay <- "sketch"
 } else {
   if(opt$norm_diff == "SCT") assay <- "SCT" else{

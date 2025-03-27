@@ -336,6 +336,30 @@
       ],
       "Hash": "065ae649b05f1ff66bb0c793107508f5"
     },
+    "DESeq2": {
+      "Package": "DESeq2",
+      "Version": "1.44.0",
+      "Source": "Bioconductor",
+      "Repository": "Bioconductor 3.19",
+      "Requirements": [
+        "Biobase",
+        "BiocGenerics",
+        "BiocParallel",
+        "GenomicRanges",
+        "IRanges",
+        "MatrixGenerics",
+        "Rcpp",
+        "RcppArmadillo",
+        "S4Vectors",
+        "SummarizedExperiment",
+        "ggplot2",
+        "locfit",
+        "matrixStats",
+        "methods",
+        "stats4"
+      ],
+      "Hash": "a90e0e67215ba95ccb29e93b169caaa4"
+    },
     "DEoptimR": {
       "Package": "DEoptimR",
       "Version": "1.1-3",
@@ -960,6 +984,21 @@
       ],
       "Hash": "4608fe675166f533e371deed8e7b5f35"
     },
+    "Rfast2": {
+      "Package": "Rfast2",
+      "Version": "0.1.5.2",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Requirements": [
+        "R",
+        "Rcpp",
+        "RcppArmadillo",
+        "RcppParallel",
+        "Rfast",
+        "Rnanoflann"
+      ],
+      "Hash": "59c237220fde610f19d90cf810a15bda"
+    },
     "Rhdf5lib": {
       "Package": "Rhdf5lib",
       "Version": "1.26.0",
@@ -987,6 +1026,17 @@
         "zlibbioc"
       ],
       "Hash": "5d6514cd44a0106581e3310f3972a82e"
+    },
+    "Rnanoflann": {
+      "Package": "Rnanoflann",
+      "Version": "0.0.3",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Requirements": [
+        "Rcpp",
+        "RcppArmadillo"
+      ],
+      "Hash": "048461b3b89d64c145afc1e6866408be"
     },
     "Rsamtools": {
       "Package": "Rsamtools",
@@ -1078,7 +1128,7 @@
       "RemoteUsername": "Liuy12",
       "RemoteRepo": "seurat",
       "RemoteRef": "master",
-      "RemoteSha": "19a2397ec942c1844a8d6a6fdb57fc7dcf56e401",
+      "RemoteSha": "410519008697c180af35aec46d76bc9a85d2432f",
       "Requirements": [
         "KernSmooth",
         "MASS",
@@ -1139,7 +1189,7 @@
         "utils",
         "uwot"
       ],
-      "Hash": "00434d58bdc56c2a23be79bac30543b6"
+      "Hash": "d00c3a3bf55e1fecc348c3d7f7a7e2a6"
     },
     "SeuratDisk": {
       "Package": "SeuratDisk",

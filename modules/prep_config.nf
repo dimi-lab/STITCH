@@ -16,6 +16,8 @@ process WRITECONFIGFILE {
   val feature_list
   val output_dir
   val geneinfo
+  val parallel_strategy
+  val nworkers
   val qc_only
   val ambient_RNA_removal_flag
   val doublet_removal_flag
@@ -30,6 +32,23 @@ process WRITECONFIGFILE {
   val cellcycle_correction_flag
   val genelist_S_phase
   val genelist_G2M_phase
+  val svg_analysis
+  val svg_method
+  val deconvolution_analysis
+  val reference_deconvolution
+  val reference_assay_deconvolution
+  val query_assay_deconvolution
+  val refdata_deconvolution
+  val doublet_mode
+  val mapping_analysis
+  val reference_mapping
+  val reference_assay_mapping
+  val query_assay_mapping
+  val refdata_mapping
+  val reference_reduction
+  val normalization_method
+  val prediction_assay
+  val reduction_model
   val merge_analysis
   val integration_analysis
   val merge_only
@@ -41,6 +60,7 @@ process WRITECONFIGFILE {
   val spatial_cluster
   val lambda
   val k_geom
+  val pseudobulk_flag
   val control_var
   val case_var
   val covariate_list
@@ -49,21 +69,6 @@ process WRITECONFIGFILE {
   val pval
   val pval_flag
   val pct
-  val reference_deconvolution
-  val reference_assay_deconvolution
-  val query_assay_deconvolution
-  val refdata_deconvolution
-  val doublet_mode
-  val parallel_strategy
-  val nworkers
-  val reference_mapping
-  val reference_assay_mapping
-  val query_assay_mapping
-  val refdata_mapping
-  val reference_reduction
-  val normalization_method
-  val prediction_assay
-  val reduction_model
   
   output:
   path "config.txt"
@@ -78,6 +83,10 @@ process WRITECONFIGFILE {
   echo "feature_list=!{feature_list}" >> config.txt
   echo "output_dir=!{output_dir}" >> config.txt
   echo "geneinfo=!{geneinfo}" >> config.txt
+
+  ## Parallel
+  echo "parallel_strategy=!{parallel_strategy}" >> config.txt
+  echo "nworkers=!{nworkers}" >> config.txt
 
   ## QC
   echo "qc_only=!{qc_only}" >> config.txt
@@ -97,18 +106,20 @@ process WRITECONFIGFILE {
   echo "genelist_S_phase=!{genelist_S_phase}" >> config.txt
   echo "genelist_G2M_phase=!{genelist_G2M_phase}" >> config.txt
 
+  ## SVG
+  echo "svg_analysis=!{svg_analysis}" >> config.txt
+  echo "svg_method=!{svg_method}" >> config.txt
+
   ## Deconvolution
+  echo "deconvolution_analysis=!{deconvolution_analysis}" >> config.txt
   echo "reference_deconvolution=!{reference_deconvolution}" >> config.txt
   echo "reference_assay_deconvolution=!{reference_assay_deconvolution}" >> config.txt
   echo "query_assay_deconvolution=!{query_assay_deconvolution}" >> config.txt
   echo "refdata_deconvolution=!{refdata_deconvolution}" >> config.txt
   echo "doublet_mode=!{doublet_mode}" >> config.txt
 
-  ## Parallel
-  echo "parallel_strategy=!{parallel_strategy}" >> config.txt
-  echo "nworkers=!{nworkers}" >> config.txt
-
   ## Mapping
+  echo "mapping_analysis=!{mapping_analysis}" >> config.txt
   echo "reference_mapping=!{reference_mapping}" >> config.txt
   echo "reference_assay_mapping=!{reference_assay_mapping}" >> config.txt
   echo "query_assay_mapping=!{query_assay_mapping}" >> config.txt
@@ -136,6 +147,7 @@ process WRITECONFIGFILE {
   echo "k_geom=!{k_geom}" >> config.txt 
 
   ## Differential expression
+  echo "pseudobulk_flag=!{pseudobulk_flag}" >> config.txt
   echo "control_var=!{control_var}" >> config.txt
   echo "case_var=!{case_var}" >> config.txt
   echo "covariate_list=!{covariate_list}" >> config.txt

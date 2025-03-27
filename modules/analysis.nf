@@ -1,3 +1,28 @@
+process SVG {
+  cpus 5
+  memory '10 GB'
+
+  publishDir(
+    path: "${params.output_dir}/SVG/",
+    mode: "copy"
+  )
+
+  input:
+  val norm_dimreduc
+  val svg_method
+  path seurat_obj_collect
+  tuple val(sampleid), val(condition), path(secondary_output)
+
+	output:
+  path "${sampleid}_svg_results.txt"
+
+	script:
+	"""
+  export PROJECT_DIR=${projectDir}
+	Rscript ${projectDir}/scripts/svg.r --sampleid $sampleid --norm_dimreduc $norm_dimreduc --svg_method $svg_method
+	"""
+}
+
 process DECONVOLUTION {
   cpus 5
   memory '50 GB'
@@ -9,7 +34,6 @@ process DECONVOLUTION {
   
   input:
   val reference_deconvolution
-  val query_deconvolution
   val query_assay_deconvolution
   val reference_assay_deconvolution
   val refdata_deconvolution
@@ -25,7 +49,7 @@ process DECONVOLUTION {
 	script:
 	"""
   export PROJECT_DIR=${projectDir}
-	Rscript ${projectDir}/scripts/deconvolution.r --reference $reference_deconvolution --query $query_deconvolution --reference_assay $reference_assay_deconvolution --query_assay $query_assay_deconvolution --refdata $refdata --doublet_mode $doublet_mode --parallel_strategy $parallel_strategy --nworkers $nworkers
+	Rscript ${projectDir}/scripts/deconvolution.r --reference $reference_deconvolution --sampleid $sampleid --reference_assay $reference_assay_deconvolution --query_assay $query_assay_deconvolution --refdata $refdata --doublet_mode $doublet_mode --parallel_strategy $parallel_strategy --nworkers $nworkers
 	"""
 }
 
@@ -35,7 +59,6 @@ process MAPPING {
 
   input:
   val reference_mapping
-  val query_mapping
   val reference_assay_mapping
   val query_assay_mapping
   val reference_reduction
@@ -52,7 +75,7 @@ process MAPPING {
   script:
   """
   export PROJECT_DIR=${projectDir}
-  Rscript ${projectDir}/scripts/map_to_reference.r --reference $reference_mapping --query $query_mapping --reference_assay $reference_assay_mapping --query_assay $query_assay_mapping --reference_reduction $reference_reduction --normalization_method $normalization_method --refdata $refdata_mapping --prediction_assay $prediction_assay --reduction_model $reduction_model
+  Rscript ${projectDir}/scripts/map_to_reference.r --reference $reference_mapping --sampleid $sampleid --reference_assay $reference_assay_mapping --query_assay $query_assay_mapping --reference_reduction $reference_reduction --normalization_method $normalization_method --refdata $refdata_mapping --prediction_assay $prediction_assay --reduction_model $reduction_model
   """
 }
 
@@ -95,6 +118,26 @@ process INTEGRATESAMPLES {
 	"""
 }
 
+process GENERATEPSEUDOBULK {
+  cpus 1
+  memory '50 GB'
+
+  input:
+  path seurat_obj
+  val data_type
+  path on_disk_mat
+
+	output:
+  path "seurat_obj_pb.rds", emit: seurat_obj_pb
+  path "seurat_clusters_condition.txt", emit: seurat_clusters_condition
+
+	script:
+	"""
+  export PROJECT_DIR=${projectDir}
+	Rscript ${projectDir}/scripts/generate_pseudobulk.r --seurat_obj $seurat_obj --data_type $data_type
+	"""
+}
+
 process FINDMARKERS {
   cpus 1
   memory '5 GB'
@@ -104,6 +147,7 @@ process FINDMARKERS {
   input:
   val workflowpath
   val data_type
+  val pseudobulk_flag
   val control_var
   val case_var
   val covariate_list
@@ -122,7 +166,7 @@ process FINDMARKERS {
 	script:
 	"""
   export PROJECT_DIR=${projectDir}
-	Rscript ${projectDir}/scripts/find_markers_wrapper.r --workflowpath $workflowpath --data_type $data_type --control_var $control_var --case_var $case_var --covariate_list $covariate_list --test $test --sketch_flag $sketch_flag --norm_diff $norm_diff --seurat_obj $integrated_obj --seurat_clusters_condition $seurat_clusters_condition --clusternum ${clusternum}
+	Rscript ${projectDir}/scripts/find_markers_wrapper.r --workflowpath $workflowpath --data_type $data_type --pseudobulk_flag $pseudobulk_flag --control_var $control_var --case_var $case_var --covariate_list $covariate_list --test $test --sketch_flag $sketch_flag --norm_diff $norm_diff --seurat_obj $integrated_obj --seurat_clusters_condition $seurat_clusters_condition --clusternum ${clusternum}
 	"""
 }
 

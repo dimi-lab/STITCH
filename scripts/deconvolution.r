@@ -3,8 +3,8 @@ library('optparse')
 option_list <- list(
   make_option(c("--reference"), type="character", default=NULL, 
               help="Path to reference seurat object in .rds format. [default= %default]", metavar="character"),
-  make_option(c("--query"), type="character", default=NULL, 
-              help="Path to query seurat object. [default= %default]", metavar="character"),
+  make_option(c("--sampleid"), type="character", default=NULL, 
+              help="Sample id. [default= %default]", metavar="character"),
   make_option(c("--reference_assay"), type="character", default=NULL, 
               help="Reference Assay to use to perform deconvolution. [default= %default]", metavar="character"),
   make_option(c("--query_assay"), type="character", default=NULL, 
@@ -37,7 +37,7 @@ remove_object <- function(object_name){
 }
 
 reference <- readRDS(opt$reference)
-query <- readRDS(opt$query)
+query <- readRDS(paste0(opt$sampleid, ".rds"))
 
 reference <- Reference(reference[[opt$reference_assay]]$counts, as.factor(reference@meta.data[[opt$refdata]]))
 
@@ -46,4 +46,4 @@ myRCTD <- create.RCTD(bulk_spatial, reference, max_cores = 10, CELL_MIN_INSTANCE
 myRCTD <- run.RCTD(myRCTD, doublet_mode = opt$doublet_mode)
 
 message("saving RCTD object")
-saveRDS(myRCTD@results,gsub(".rds","_RCTD_results.rds",basename(opt$query)))
+saveRDS(myRCTD@results,paste0(opt$sampleid,"_RCTD_results.rds"))
