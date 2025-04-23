@@ -986,18 +986,23 @@
     },
     "Rfast2": {
       "Package": "Rfast2",
-      "Version": "0.1.5.2",
-      "Source": "Repository",
-      "Repository": "CRAN",
+      "Version": "0.1.5.1",
+      "Source": "GitHub",
+      "RemoteType": "github",
+      "RemoteHost": "api.github.com",
+      "RemoteRepo": "Rfast2",
+      "RemoteUsername": "RfastOfficial",
+      "RemoteRef": "v0.1.5.1-theseus",
+      "RemoteSha": "23c639c345d526ac05ce8b1613d9671975a8402b",
       "Requirements": [
         "R",
+        "RANN",
         "Rcpp",
         "RcppArmadillo",
         "RcppParallel",
-        "Rfast",
-        "Rnanoflann"
+        "Rfast"
       ],
-      "Hash": "59c237220fde610f19d90cf810a15bda"
+      "Hash": "d76014fbfb6df0de01eb1b7d290cdc1a"
     },
     "Rhdf5lib": {
       "Package": "Rhdf5lib",
@@ -1026,17 +1031,6 @@
         "zlibbioc"
       ],
       "Hash": "5d6514cd44a0106581e3310f3972a82e"
-    },
-    "Rnanoflann": {
-      "Package": "Rnanoflann",
-      "Version": "0.0.3",
-      "Source": "Repository",
-      "Repository": "CRAN",
-      "Requirements": [
-        "Rcpp",
-        "RcppArmadillo"
-      ],
-      "Hash": "048461b3b89d64c145afc1e6866408be"
     },
     "Rsamtools": {
       "Package": "Rsamtools",

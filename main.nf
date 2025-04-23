@@ -34,7 +34,7 @@ workflow {
 
         if (params.deconvolution_analysis) {
             
-            DECONVOLUTION(params$reference_deconvolution, params$query_assay_deconvolution, params$reference_assay_deconvolution, params$refdata_deconvolution, params$doublet_mode, params$parallel_strategy, params$nworkers, LOADSAMPLE.output.seurat_obj.collect(), samples_ch)
+            DECONVOLUTION(params.reference_deconvolution, params.query_assay_deconvolution, params.reference_assay_deconvolution, params.refdata_deconvolution, params.doublet_mode, params.parallel_strategy, params.nworkers, LOADSAMPLE.output.seurat_obj.collect(), samples_ch)
 
         }
 

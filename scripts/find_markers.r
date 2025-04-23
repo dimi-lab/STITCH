@@ -11,7 +11,7 @@ option_list <- list(
               help="Character value specifying group1. [default= %default]", metavar="character"), 
   make_option(c("--ident.2"), type="character", default=NULL, 
               help="Character value specifying group2. If NULL, use all other cells for comparison. [default= %default]", metavar="character"),
-  make_option(c("--group.var"), type="character", default=NULL, 
+  make_option(c("--group.var"), type="character", default="NA", 
               help="Character value specifying the group variable. [default= %default]", metavar="character"),
   make_option(c("--test.use"), type="character", default=NULL, 
               help="Character value specifying method for statistical test. See help page for FindMarkers for details. [default= %default]", metavar="character"),
@@ -43,7 +43,7 @@ if((!"covariate.list" %in% names(opt)) || (opt$covariate.list == "NA")) covariat
 
 seurat_obj[[opt$assay]] <- JoinLayers(seurat_obj[[opt$assay]])
 
-if(!"group.var" %in% names(opt)){
+if(opt$group.var == "NA"){
   clusterout <- FindMarkers(seurat_obj, ident.1 = opt$ident.1, ident.2 = ident.2, verbose = TRUE,min.cells.group=1,min.pct=0,min.cells.feature=0,logfc.threshold=0,assay = opt$assay,slot='data', latent.vars = covariate.list, test.use = opt$test.use)
 } else {
   ## use default function for now

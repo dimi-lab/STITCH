@@ -49,7 +49,7 @@ process DECONVOLUTION {
 	script:
 	"""
   export PROJECT_DIR=${projectDir}
-	Rscript ${projectDir}/scripts/deconvolution.r --reference $reference_deconvolution --sampleid $sampleid --reference_assay $reference_assay_deconvolution --query_assay $query_assay_deconvolution --refdata $refdata --doublet_mode $doublet_mode --parallel_strategy $parallel_strategy --nworkers $nworkers
+	Rscript ${projectDir}/scripts/deconvolution.r --reference $reference_deconvolution --sampleid $sampleid --reference_assay $reference_assay_deconvolution --query_assay $query_assay_deconvolution --refdata $refdata_deconvolution --doublet_mode $doublet_mode --parallel_strategy $parallel_strategy --nworkers $nworkers
 	"""
 }
 

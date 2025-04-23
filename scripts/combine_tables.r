@@ -27,7 +27,6 @@ library(openxlsx)
 library(dplyr)
 options(stringsAsFactors = FALSE)
 
-options(stringsAsFactors = FALSE)
 for(i in c("fc", "pval", "pct")) opt[[i]] <- as.numeric(opt[[i]])
 geneinfo <- read.delim(opt$geneinfo, header = TRUE)
 colnames(geneinfo)[c(1,2)] <- c("gene_id", "gene_name")
@@ -55,6 +54,8 @@ de_tables_list_filter <- lapply(1:length(de_tables_list), function(i){
   idx_de <- Reduce(intersect, idx_de)
   tmp[idx_de,]
 })
+
+message(paste0('number of DEGs across clusters: ',paste0(sapply(de_tables_list_filter, function(i) nrow(i)),collapse = ",")))
 
 message('saving tables to excel')
 sheetnames <- gsub("\\.[^.]+$","",basename(de_tables))
