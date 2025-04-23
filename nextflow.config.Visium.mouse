@@ -5,6 +5,8 @@ params {
   // General
   // No need to modify
   workflowpath = "${projectDir}"
+  // Path to samplesheet.tsv file
+  samplesheet = "NA"
   // author name to add to the final report
   authorname = "Liu,Leo"
   // one of scRNAseq, Visium
@@ -32,7 +34,7 @@ params {
   // only applicable to scRNAseq  
   doublet_removal_flag = "0"
   // "0" or "1" to indicate whether to apply adaptive cutoff idenfication (based on IQR)
-  adaptive_cutoff_flag = "1"
+  adaptive_cutoff_flag = "0"
   // Cutoff for percentage of mitochondria concentration
   // cells with values higher than the cutoff will be removed
   mt_cutoff = 40
@@ -77,7 +79,7 @@ params {
   // Path to reference seurat object in .rds format
   reference_deconvolution = "NA"
   // Assay of the reference used for deconvolution
-  reference_assay_deconvolution = "Spatial"
+  reference_assay_deconvolution = "RNA"
   // Assay of the query used for deconvolution
   query_assay_deconvolution = "Spatial"
   // Character indicating reference data, e.g. cell type, to use for deconvolution
