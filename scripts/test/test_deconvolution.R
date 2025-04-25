@@ -41,5 +41,28 @@ seurat_obj@reductions[['UMAP']] <- CreateDimReducObject(embeddings = reducedDim(
 DimPlot(seurat_obj, reduction = "UMAP", group.by = "cellType_broad_hc", split.by = "BrNum", ncol = 5)
 DimPlot(seurat_obj, reduction = "UMAP", group.by = "layer_annotation", split.by = "BrNum", ncol = 5)
 
-seurat_obj <- FindVariableFeatures(seurat_obj)
+## recalculate PCA, harmony and umap
+## as feature loading is not present in the singlecellexperiment class
+## and it's required for transferanchors function
+## umap model is not saved either
+seurat_obj[["RNA"]] <- split(seurat_obj[["RNA"]], f = seurat_obj$BrNum)
+seurat_obj <- seurat_obj %>% FindVariableFeatures() %>% ScaleData() %>% RunPCA()
+
+seurat_obj <- IntegrateLayers(
+  object = seurat_obj, 
+  method = HarmonyIntegration,
+  orig.reduction = "pca", 
+  new.reduction = "harmony",
+  normalization.method = "LogNormalize",
+  verbose = TRUE
+)
+seurat_obj <- FindNeighbors(seurat_obj, reduction = "harmony")
+seurat_obj <- FindClusters(seurat_obj)
+seurat_obj <- RunUMAP(seurat_obj, reduction = "harmony", return.model = TRUE, reduction.name = "umap", dims = 1:30)
+
+DimPlot(seurat_obj, reduction = "umap", group.by = "cellType_broad_hc", split.by = "BrNum", ncol = 5)
+DimPlot(seurat_obj, reduction = "umap", group.by = "layer_annotation", split.by = "BrNum", ncol = 5)
+
+seurat_obj[["RNA"]] <- JoinLayers(seurat_obj[["RNA"]])
+
 saveRDS(seurat_obj, "testdata/process_dir_032825/DLPFC_snRNAseq.rds")

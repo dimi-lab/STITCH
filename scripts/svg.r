@@ -12,8 +12,8 @@ option_list <- list(
 opt_parser <- OptionParser(option_list=option_list)
 opt <- parse_args(opt_parser)
 
-library(Seurat)
 library(Rfast2)
+library(Seurat)
 
 if(opt$norm_dimreduc == "SCT") assay <- "SCT" else assay <- "Spatial"
 
@@ -23,9 +23,11 @@ seurat_obj <- FindSpatiallyVariableFeatures(seurat_obj, assay = assay, features 
 if(assay == "SCT"){
   col_sel <- grep(opt$svg_method, colnames(seurat_obj[[assay]]@meta.features), ignore.case = TRUE, value = TRUE)
   svg_res <- seurat_obj[[assay]]@meta.features[rownames(seurat_obj[[assay]]@meta.features) %in% VariableFeatures(seurat_obj),col_sel]
+  rownames(svg_res) <- rownames(seurat_obj[[assay]]@meta.features)[rownames(seurat_obj[[assay]]@meta.features) %in% VariableFeatures(seurat_obj)]
 } else if(assay == "Spatial"){
   col_sel <- grep(opt$svg_method, colnames(seurat_obj[[assay]]@meta.data), ignore.case = TRUE, value = TRUE)
   svg_res <- seurat_obj[[assay]]@meta.data[rownames(seurat_obj[[assay]]@features) %in% VariableFeatures(seurat_obj),col_sel]
+  rownames(svg_res) <- rownames(seurat_obj[[assay]]@features)[rownames(seurat_obj[[assay]]@features) %in% VariableFeatures(seurat_obj)]
 }
 
-write.table(svg_res, paste0(opt$sampleid,"_svg_res.txt"), row.names = TRUE, col.names = NA, sep = "\t", quote = FALSE)
+write.table(svg_res, paste0(opt$sampleid,"_svg_results.txt"), row.names = TRUE, col.names = NA, sep = "\t", quote = FALSE)

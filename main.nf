@@ -44,13 +44,13 @@ workflow {
 
             if (params.integration_analysis) {
 
-                INTEGRATESAMPLES(params.workflowpath, params.samplesheet,params.data_type, params.resolution,params.geneinfo, params.cellcycle_correction_flag, params.genelist_S_phase, params.genelist_G2M_phase, params.integration_method, params.sketch_flag, params.norm_dimreduc, params.spatial_cluster, params.lambda, params.k_geom, MAPPING.output.seurat_obj.collect())
+                INTEGRATESAMPLES(params.workflowpath, params.samplesheet,params.data_type, params.resolution,params.geneinfo, params.cellcycle_correction_flag, params.genelist_S_phase, params.genelist_G2M_phase, params.integration_method, params.sketch_flag, params.norm_dimreduc, params.spatial_cluster, params.lambda, params.k_geom, params.parallel_strategy, params.nworkers, MAPPING.output.seurat_obj.collect())
 
             }
 
             if (params.merge_analysis) {
 
-                MERGESAMPLES(params.workflowpath, params.samplesheet,params.data_type, params.resolution,params.geneinfo, params.cellcycle_correction_flag, params.genelist_S_phase, params.genelist_G2M_phase, params.sketch_flag, params.norm_dimreduc, params.spatial_cluster, params.lambda, params.k_geom, MAPPING.output.seurat_obj.collect())
+                MERGESAMPLES(params.workflowpath, params.samplesheet,params.data_type, params.resolution,params.geneinfo, params.cellcycle_correction_flag, params.genelist_S_phase, params.genelist_G2M_phase, params.sketch_flag, params.norm_dimreduc, params.spatial_cluster, params.lambda, params.k_geom, params.parallel_strategy, params.nworkers, MAPPING.output.seurat_obj.collect())
 
             }
 
@@ -58,13 +58,13 @@ workflow {
 
             if (params.integration_analysis) {
 
-                INTEGRATESAMPLES(params.workflowpath, params.samplesheet,params.data_type, params.resolution,params.geneinfo, params.cellcycle_correction_flag, params.genelist_S_phase, params.genelist_G2M_phase, params.integration_method, params.sketch_flag, params.norm_dimreduc, params.spatial_cluster, params.lambda, params.k_geom, LOADSAMPLE.output.seurat_obj.collect())
+                INTEGRATESAMPLES(params.workflowpath, params.samplesheet,params.data_type, params.resolution,params.geneinfo, params.cellcycle_correction_flag, params.genelist_S_phase, params.genelist_G2M_phase, params.integration_method, params.sketch_flag, params.norm_dimreduc, params.spatial_cluster, params.lambda, params.k_geom, params.parallel_strategy, params.nworkers, LOADSAMPLE.output.seurat_obj.collect())
 
             }
 
             if (params.merge_analysis) {
 
-                MERGESAMPLES(params.workflowpath, params.samplesheet,params.data_type, params.resolution,params.geneinfo, params.cellcycle_correction_flag, params.genelist_S_phase, params.genelist_G2M_phase, params.sketch_flag, params.norm_dimreduc, params.spatial_cluster, params.lambda, params.k_geom, LOADSAMPLE.output.seurat_obj.collect())
+                MERGESAMPLES(params.workflowpath, params.samplesheet,params.data_type, params.resolution,params.geneinfo, params.cellcycle_correction_flag, params.genelist_S_phase, params.genelist_G2M_phase, params.sketch_flag, params.norm_dimreduc, params.spatial_cluster, params.lambda, params.k_geom, params.parallel_strategy, params.nworkers, LOADSAMPLE.output.seurat_obj.collect())
 
             }
         }

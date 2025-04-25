@@ -32,6 +32,9 @@ install("arrow", prompt = FALSE)
 install("Liuy12/spacexr")
 install("DESeq2")
 install("Rfast2")
+## cannot load the latest version of Rfast2
+## switch to older version for now
+install_github("RfastOfficial/Rfast2@v0.1.5.1-theseus")
 
 requiredPacks <- c('optparse','scDblFinder','SoupX','ggplot2','patchwork','BPCells','presto','glmGamPoi','SeuratWrappers','Banksy','dplyr','openxlsx','rmdformats','rmarkdown','reshape2','gridExtra','ggplot2','future','doFuture','Seurat','SeuratObject','RColorBrewer','harmony','DT', 'hdf5r', 'grid')
 for(i in requiredPacks){

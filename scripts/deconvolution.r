@@ -39,7 +39,9 @@ remove_object <- function(object_name){
 reference <- readRDS(opt$reference)
 query <- readRDS(paste0(opt$sampleid, ".rds"))
 
-reference <- Reference(reference[[opt$reference_assay]]$counts, as.factor(reference@meta.data[[opt$refdata]]))
+cell_types <- as.factor(reference@meta.data[[opt$refdata]])
+names(cell_types) <- colnames(reference)
+reference <- Reference(reference[[opt$reference_assay]]$counts, cell_types)
 
 bulk_spatial <- SpatialRNA(GetTissueCoordinates(query)[,1:2], query[[opt$query_assay]]$counts)
 myRCTD <- create.RCTD(bulk_spatial, reference, max_cores = 10, CELL_MIN_INSTANCE=min(table(reference@cell_types)), UMI_min = 0, counts_MIN = 0)

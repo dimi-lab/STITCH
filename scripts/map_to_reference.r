@@ -45,7 +45,7 @@ message("Performing mapping to reference")
 ### need to run V3 integration workflow with integratedata to create
 ### integrated assay, use method 'rpca'
 
-anchor <- FindTransferAnchors(
+anchors <- FindTransferAnchors(
   reference = reference,
   query = query,
   reduction = "pcaproject",
@@ -60,7 +60,7 @@ query <- TransferData(
   prediction.assay = as.logical(as.numeric(opt$prediction_assay)))
 
 query <- IntegrateEmbeddings(
-  anchorset = anchor,
+  anchorset = anchors,
   reference = reference,
   query = query, 
   new.reduction.name = paste0("ref.", opt$reference_reduction)

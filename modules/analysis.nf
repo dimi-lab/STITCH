@@ -103,6 +103,8 @@ process INTEGRATESAMPLES {
   val spatial_cluster
   val lambda
   val k_geom
+  val parallel_strategy
+  val nworkers
   path seurat_obj_collect
 
 	output:
@@ -114,7 +116,7 @@ process INTEGRATESAMPLES {
 	script:
 	"""
   export PROJECT_DIR=${projectDir}
-	Rscript ${projectDir}/scripts/integrate_samples_wrapper.r --workflowpath $workflowpath --samplesheet $samplesheet --data_type $data_type --resolution $resolution --geneinfo $geneinfo --cellcycle_correction_flag $cellcycle_correction_flag --genelist_S_phase $genelist_S_phase --genelist_G2M_phase $genelist_G2M_phase --integration_method $integration_method --sketch_flag $sketch_flag --norm_dimreduc $norm_dimreduc --spatial_cluster $spatial_cluster --lambda $lambda --k_geom $k_geom
+	Rscript ${projectDir}/scripts/integrate_samples_wrapper.r --workflowpath $workflowpath --samplesheet $samplesheet --data_type $data_type --resolution $resolution --geneinfo $geneinfo --cellcycle_correction_flag $cellcycle_correction_flag --genelist_S_phase $genelist_S_phase --genelist_G2M_phase $genelist_G2M_phase --integration_method $integration_method --sketch_flag $sketch_flag --norm_dimreduc $norm_dimreduc --spatial_cluster $spatial_cluster --lambda $lambda --k_geom $k_geom --parallel_strategy $parallel_strategy --nworkers $nworkers
 	"""
 }
 
@@ -283,6 +285,8 @@ process MERGESAMPLES {
   val spatial_cluster
   val lambda
   val k_geom
+  val parallel_strategy
+  val nworkers
   path seurat_obj_collect
 
 	output:
@@ -294,6 +298,6 @@ process MERGESAMPLES {
 	script:
 	"""
   export PROJECT_DIR=${projectDir}
-	Rscript ${projectDir}/scripts/merge_samples_wrapper.r --workflowpath $workflowpath --samplesheet $samplesheet --data_type $data_type --resolution $resolution --geneinfo $geneinfo --cellcycle_correction_flag $cellcycle_correction_flag --genelist_S_phase $genelist_S_phase --genelist_G2M_phase $genelist_G2M_phase --sketch_flag $sketch_flag --norm_dimreduc $norm_dimreduc --spatial_cluster $spatial_cluster --lambda $lambda --k_geom $k_geom
+	Rscript ${projectDir}/scripts/merge_samples_wrapper.r --workflowpath $workflowpath --samplesheet $samplesheet --data_type $data_type --resolution $resolution --geneinfo $geneinfo --cellcycle_correction_flag $cellcycle_correction_flag --genelist_S_phase $genelist_S_phase --genelist_G2M_phase $genelist_G2M_phase --sketch_flag $sketch_flag --norm_dimreduc $norm_dimreduc --spatial_cluster $spatial_cluster --lambda $lambda --k_geom $k_geom --parallel_strategy $parallel_strategy --nworkers $nworkers
 	"""
 }
