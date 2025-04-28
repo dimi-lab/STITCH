@@ -40,6 +40,7 @@ process WRITECONFIGFILE {
   val query_assay_deconvolution
   val refdata_deconvolution
   val doublet_mode
+  val gene_list_reg
   val mapping_analysis
   val reference_mapping
   val reference_assay_mapping
@@ -117,6 +118,7 @@ process WRITECONFIGFILE {
   echo "query_assay_deconvolution=!{query_assay_deconvolution}" >> config.txt
   echo "refdata_deconvolution=!{refdata_deconvolution}" >> config.txt
   echo "doublet_mode=!{doublet_mode}" >> config.txt
+  echo "gene_list_reg=!{gene_list_reg}" >> config.txt
 
   ## Mapping
   echo "mapping_analysis=!{mapping_analysis}" >> config.txt

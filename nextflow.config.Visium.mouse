@@ -86,6 +86,9 @@ params {
   refdata_deconvolution = "NA"
   // doublet mode for RCTD, can be either doublet, multi or full
   doublet_mode = "full"
+  // optional gene list used for deconvolution, one gene per line
+  // set to "NA" to use default strategy used by RCTD
+  gene_list_reg = "NA"  
 
   // Mapping-analysis parameters
   // Mapping analysis is recommended for scRNAseq data

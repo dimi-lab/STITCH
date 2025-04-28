@@ -40,6 +40,7 @@ process DECONVOLUTION {
   val doublet_mode
   val parallel_strategy
   val nworkers
+  val gene_list_reg
   path seurat_obj_collect
   tuple val(sampleid), val(condition), path(secondary_output)
 
@@ -49,7 +50,7 @@ process DECONVOLUTION {
 	script:
 	"""
   export PROJECT_DIR=${projectDir}
-	Rscript ${projectDir}/scripts/deconvolution.r --reference $reference_deconvolution --sampleid $sampleid --reference_assay $reference_assay_deconvolution --query_assay $query_assay_deconvolution --refdata $refdata_deconvolution --doublet_mode $doublet_mode --parallel_strategy $parallel_strategy --nworkers $nworkers
+	Rscript ${projectDir}/scripts/deconvolution.r --reference $reference_deconvolution --sampleid $sampleid --reference_assay $reference_assay_deconvolution --query_assay $query_assay_deconvolution --refdata $refdata_deconvolution --doublet_mode $doublet_mode --parallel_strategy $parallel_strategy --nworkers $nworkers --gene_list_reg $gene_list_reg
 	"""
 }
 

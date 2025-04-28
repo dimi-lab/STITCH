@@ -16,7 +16,9 @@ option_list <- list(
   make_option(c("--parallel_strategy"), type="character", default=NULL, 
               help="Parallel strategy for future. See help page for plan for details. [default= %default]", metavar="character"),
   make_option(c("--nworkers"), type="integer", default=NULL, 
-              help="Number of workers/cpus used for future. [default= %default]", metavar="integer")
+              help="Number of workers/cpus used for future. [default= %default]", metavar="integer"),
+  make_option(c("--gene_list_reg"), type="character", default=NULL, 
+              help="Path to a file containing gene list used for deconvolution. One gene per line. [default= %default]", metavar="character")
 )
 
 opt_parser <- OptionParser(option_list=option_list)
@@ -45,6 +47,12 @@ reference <- Reference(reference[[opt$reference_assay]]$counts, cell_types)
 
 bulk_spatial <- SpatialRNA(GetTissueCoordinates(query)[,1:2], query[[opt$query_assay]]$counts)
 myRCTD <- create.RCTD(bulk_spatial, reference, max_cores = 10, CELL_MIN_INSTANCE=min(table(reference@cell_types)), UMI_min = 0, counts_MIN = 0)
+
+if(opt$gene_list_reg != "NA") {
+  gene_list_reg <- read.delim(opt$gene_list_reg, header = FALSE)$V1
+  RCTD@internal_vars$gene_list_reg <- gene_list_reg
+  }
+
 myRCTD <- run.RCTD(myRCTD, doublet_mode = opt$doublet_mode)
 
 message("saving RCTD object")
