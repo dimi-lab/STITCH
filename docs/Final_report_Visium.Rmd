@@ -223,8 +223,8 @@ if(ncol(sampleinfo) >3){
 ```{r, echo=FALSE}
 if(opt$feature_list != "NA") genelist_flag <- TRUE else {
   genelist_flag <- FALSE
-  featureplot_feature_width <- feature_gene_violin_width <- default_width
-  featureplot_feature_height <- feature_gene_violin_height <- default_height
+  feature_gene_spatial_width <- featureplot_feature_width <- feature_gene_violin_width <- default_width
+  feature_gene_spatial_height <- featureplot_feature_height <- feature_gene_violin_height <- default_height
   }
 ```
 
@@ -266,7 +266,7 @@ grid.draw(m)
 
 ## Feature gene expression spatial plot
 
-```{r}
+```{r, eval=genelist_flag, echo=genelist_flag}
 if(nsamples == 1){
   feature_gene_spatial_width <- 6*round(sqrt(length(genes)))
   feature_gene_spatial_height <- 6*ceiling(length(genes)/round(sqrt(length(genes))))
@@ -588,9 +588,11 @@ p <- lapply(1:length(genelist_top5_gs),function(i){
 p <- unlist(p,recursive = F)
 m <- matrix(NA,nrow = length(selectedclusters),ncol = 5)
 m[1,1:length(genelist_top5_gs[[1]])] <- 1:length(genelist_top5_gs[[1]])
-for(i in 2:length(genelist_top5_gs)){
+if(length(genelist_top5_gs) > 1){
+  for(i in 2:length(genelist_top5_gs)){
   start <- max(m[i-1,],na.rm = T)
   m[i,1:length(genelist_top5_gs[[i]])] <- (start+1):(start+length(genelist_top5_gs[[i]]))
+}
 }
 mp <- grid.arrange(grobs=p,layout_matrix=m)
 ggsave('./diff_gene_violin_top5.png',mp,width=12*5,height =6*length(genelist_top5_gs),limitsize = F,dpi=72)
