@@ -15,9 +15,8 @@ opt <- parse_args(opt_parser)
 library(Rfast2)
 library(Seurat)
 
-if(opt$norm_dimreduc == "SCT") assay <- "SCT" else assay <- "Spatial"
-
 seurat_obj <- readRDS(paste0(opt$sampleid,".rds"))
+if(opt$norm_dimreduc == "SCT") assay <- "SCT" else assay <- grep("Spatial",Assays(seurat_obj), value = TRUE)
 DefaultAssay(seurat_obj) <- assay
 seurat_obj <- FindSpatiallyVariableFeatures(seurat_obj, assay = assay, features = VariableFeatures(seurat_obj), selection.method = opt$svg_method)
 if(assay == "SCT"){

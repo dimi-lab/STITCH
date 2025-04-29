@@ -5,6 +5,8 @@ option_list <- list(
               help="workflow path. [default= %default]", metavar="character"),
   make_option(c("--data_type"), type="character", default=NULL, 
               help="data type. [default= %default]", metavar="character"),
+  make_option(c("--binsize"), type="integer", default=NULL, 
+              help="bin size to read in. [default= %default]", metavar="integer"),
   make_option(c("--ambient_RNA_removal_flag"), type="character", default=NULL, 
               help="ambient RNA removal flag. [default= %default]", metavar="character"),
   make_option(c("--doublet_removal_flag"), type="character", default=NULL, 
@@ -34,7 +36,7 @@ opt <- parse_args(opt_parser)
 
 options(stringsAsFactors = FALSE)
 
-for(i in c("mt_cutoff", "hb_cutoff", "nFeature_cutoff", "nCount_cutoff","nCell_cutoff")) opt[[i]] <- as.numeric(opt[[i]])
+for(i in c("mt_cutoff", "hb_cutoff", "nFeature_cutoff", "nCount_cutoff","nCell_cutoff", "binsize")) opt[[i]] <- as.numeric(opt[[i]])
 
 params <- list(opt = opt)
 message("generate QC report")
@@ -47,4 +49,8 @@ if(opt$data_type == 'scRNAseq') {
   file.copy(file.path(opt$workflowpath, "/docs/QC_report_Visium.Rmd"), "./")
   rmarkdown::render("./QC_report_Visium.Rmd", params = params, output_file = "QC_report.html")
   file.remove("./QC_report_Visium.Rmd")
+} else if(opt$data_type == 'VisiumHD'){
+  file.copy(file.path(opt$workflowpath, "/docs/QC_report_VisiumHD.Rmd"), "./")
+  rmarkdown::render("./QC_report_VisiumHD.Rmd", params = params, output_file = "QC_report.html")
+  file.remove("./QC_report_VisiumHD.Rmd")
 }

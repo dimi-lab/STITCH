@@ -1,0 +1,161 @@
+---
+title: "QC report summary"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output:
+  rmdformats::readthedown:
+    self_contained: true
+    thumbnails: false
+    lightbox: false
+    gallery: false
+    highlight: tango
+    code_folding: hide
+---
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(message = FALSE, warning = FALSE)
+```
+
+```{r load_library}
+### load libraries
+renv::load(Sys.getenv("PROJECT_DIR"))
+library(ggplot2)
+library(patchwork)
+library(tidyr)
+library(plotly)
+library(DT)
+options(stringsAsFactors = F)
+```
+
+```{r summarize_metrics}
+opt <- params$opt
+qc_metrics_cells_paths <- list.files("./", pattern = "*._qc_metrics_cells.txt")
+qc_list <- lapply(qc_metrics_cells_paths, function(i) read.delim(i, header = TRUE))
+ncells <- sapply(qc_list, function(i) nrow(i))
+opt_postqc_paths <- list.files("./", pattern = "*._opt_postQC.txt")
+opt_postqc_list <- lapply(opt_postqc_paths, function(i) read.delim(i, header = TRUE))
+opt_postqc_list <- opt_postqc_list[match(sapply(qc_list, function(i) unique(i$sampleid)),sapply(opt_postqc_list, function(i) i$sampleid))]
+sample_metrics_pct <- do.call(rbind,lapply(qc_list, function(i) {
+  data.frame(sampleid = unique(i$sampleid),
+             nCount_Spatial = sum(i$nCount_Spatial < opt$nCount_cutoff)/nrow(i),
+             nFeature_Spatial = sum(i$nFeature_Spatial < opt$nFeature_cutoff)/nrow(i),
+             percent.mt = sum(i$percent.mt > opt$mt_cutoff)/nrow(i),
+             percent.hb = sum(i$percent.hb > opt$hb_cutoff)/nrow(i))
+}))
+sample_metrics_long <- pivot_longer(as.data.frame(sample_metrics_pct), cols = colnames(sample_metrics_pct)[-1])
+sample_metrics_long$value <- sample_metrics_long$value*100
+sample_metrics_long$name <- factor(sample_metrics_long$name, levels = colnames(sample_metrics_pct)[-1])
+
+sample_metrics_pct_postQC <- do.call(rbind,lapply(1:length(qc_list), function(i) {
+  data.frame(sampleid = unique(qc_list[[i]]$sampleid),
+             nCount_Spatial = sum(qc_list[[i]]$nCount_Spatial < opt_postqc_list[[i]]$nCount_cutoff)/nrow(qc_list[[i]]),
+             nFeature_Spatial = sum(qc_list[[i]]$nFeature_Spatial < opt_postqc_list[[i]]$nFeature_cutoff)/nrow(qc_list[[i]]),
+             percent.mt = sum(qc_list[[i]]$percent.mt > opt_postqc_list[[i]]$mt_cutoff)/nrow(qc_list[[i]]),
+             percent.hb = sum(qc_list[[i]]$percent.hb > opt_postqc_list[[i]]$hb_cutoff)/nrow(qc_list[[i]]))
+}))
+sample_metrics_long_postQC <- pivot_longer(as.data.frame(sample_metrics_pct_postQC), cols = colnames(sample_metrics_pct_postQC)[-1])
+sample_metrics_long_postQC$value <- sample_metrics_long_postQC$value*100
+sample_metrics_long_postQC$name <- factor(sample_metrics_long_postQC$name, levels = colnames(sample_metrics_pct_postQC))
+
+sample_metrics_median <- do.call(rbind,lapply(qc_list, function(i) {
+  apply(i[,c("nCount_Spatial", "nFeature_Spatial", "percent.mt", "percent.hb")], 2, median)
+}))
+sample_metrics_median <- as.data.frame(sample_metrics_median)
+sample_metrics_median$sampleid <- sapply(qc_list, function(i) unique(i$sampleid))
+sample_metrics_median_long <- pivot_longer(as.data.frame(sample_metrics_median), cols = colnames(sample_metrics_median)[-ncol(sample_metrics_median)])
+for(i in c("nCount_Spatial", "percent.mt", "percent.hb")) sample_metrics_median[,i] <- round(sample_metrics_median[,i], digits = 2)
+
+qc_metrics_summary_paths <- list.files("./", pattern = "*._qc_metrics_summary.txt")
+qc_summary_list <- do.call(rbind, lapply(qc_metrics_summary_paths, function(i) read.delim(i, header = TRUE)))
+qc_summary_list_long <- pivot_longer(qc_summary_list, cols = colnames(qc_summary_list)[-1])
+
+median_umi_paths <- list.files("./", pattern = "*._median_umi.txt")
+min_median_umi <- min(do.call(c, lapply(median_umi_paths, function(i) read.delim(i, header = FALSE)$V1)))
+write.table(min_median_umi, "min_median_umi.txt",row.names = F, col.names = F, sep = "\t", quote = F)
+```
+
+# Data summary
+
+There are a total of `r length(qc_metrics_summary_paths)` samples (total `r sum(ncells)` # of bins). The range of # of bins is `r paste0(min(ncells), '-', max(ncells))`. The range of median UMI counts is `r paste0(min(sample_metrics_median[,"nCount_Spatial"]),"-",max(sample_metrics_median[,"nCount_Spatial"]))`. The range of median detectable features is `r paste0(min(sample_metrics_median[,"nFeature_Spatial"]),"-",max(sample_metrics_median[,"nFeature_Spatial"]))`. The range of median mitochondrial (MT) concentration is `r paste0(min(sample_metrics_median[,"percent.mt"]),"-",max(sample_metrics_median[,"percent.mt"]), "%")`. The range of median hemoglobin (Hb) concentration is `r paste0(min(sample_metrics_median[,"percent.hb"]),"-",max(sample_metrics_median[,"percent.hb"]), "%")`. The range of sample-level total number of captured genes is `r paste0(min(qc_summary_list$total_genes), "-", max(qc_summary_list$total_genes))`
+
+# Distribution of QC metrics {.tabset}
+
+## Metric median values
+
+```{r}
+#### plotly duplicate outlier jitter points
+#### https://github.com/plotly/plotly.R/issues/1114#issuecomment-1803541613
+remove_boxplot_outliers <- function(fig){
+  stopifnot("plotly" %in% class(fig))
+  fig$x$data <- lapply(
+    fig$x$data,
+    \(i){
+      if(i$type != "box") return(i)
+      i$marker = list(opacity = 0)
+      i$hoverinfo = "none"
+      i
+    }
+  )
+  fig
+}
+gp <- ggplot(aes(x= name, y = value, color = name,label = sampleid), data = sample_metrics_median_long) + geom_boxplot() + theme_classic() + labs(x = "", y = "value") + geom_point(position = position_jitter(height = 0)) + facet_wrap(~name, nrow = 2,scales="free") + theme(axis.text.x = element_text(angle = 45, vjust = 0.5))
+remove_boxplot_outliers(ggplotly(gp))
+```
+
+## Total number of genes captured per sample
+
+```{r}
+gp <- ggplot(aes(x= name, y = value, color = name,label = sampleid), data = qc_summary_list_long[qc_summary_list_long$name %in% c("total_genes"),]) + geom_boxplot() + theme_classic() + labs(x = "", y = "# of genes") + geom_point(position = position_jitter(height = 0)) + theme(axis.text.x = element_text(angle = 45, vjust = 0.5))
+remove_boxplot_outliers(ggplotly(gp))
+```
+
+# {-}
+
+# Thresholds for QC metrics {.tabset}
+
+## Distribution of thresholds
+
+```{r}
+opt_postqc_list <- do.call(rbind, opt_postqc_list)
+col_sel <- c("sampleid","mt_cutoff", "hb_cutoff", "nFeature_cutoff", "nCount_cutoff", "nCell_cutoff")
+opt_postqc_list_long <- pivot_longer(opt_postqc_list[,col_sel], cols = col_sel[-1])
+gp <- ggplot(aes(x= name, y = value, color = name,label = sampleid), data = opt_postqc_list_long) + geom_boxplot() + theme_classic() + labs(x = "", y = "value") + geom_point(position = position_jitter(height = 0)) + facet_wrap(~name, nrow = 2,scales="free") + theme(axis.title.x=element_blank(),axis.text.x=element_blank(),axis.ticks.x=element_blank())
+remove_boxplot_outliers(ggplotly(gp))
+```
+
+## Pct of bins failing each QC metric with supplied cutoff
+
+```{r}
+gp <- ggplot(aes(x= name, y = value, color = name,label = sampleid), data = sample_metrics_long) + geom_boxplot() + theme_classic() + labs(x = "", y = "% of bins fail a certian metric") + geom_point(position = position_jitter(height = 0)) + theme(axis.text.x = element_text(angle = 45, vjust = 0.5))
+remove_boxplot_outliers(ggplotly(gp))
+```
+
+## Pct of bins failing each QC metric with adaptive cutoff
+
+```{r}
+if(opt$adaptive_cutoff == "1"){
+  gp <- ggplot(aes(x= name, y = value, color = name,label = sampleid), data = sample_metrics_long_postQC) + geom_boxplot() + theme_classic() + labs(x = "", y = "% of bins fail a certian metric") + geom_point(position = position_jitter(height = 0)) + theme(axis.text.x = element_text(angle = 45, vjust = 0.5))
+remove_boxplot_outliers(ggplotly(gp))
+} else print("adaptive cutoff is disabled")
+```
+
+# {-}
+
+# QC summary {.tabset}
+
+## box plot
+
+```{r}
+qc_summary_list_long <- qc_summary_list_long[qc_summary_list_long$name != "total_genes",]
+qc_summary_list_long$name <- factor(qc_summary_list_long$name, levels = rev(colnames(qc_summary_list)))
+gp <- ggplot(aes(x= name, y = value, color = name,label = sampleid), data = qc_summary_list_long) + geom_boxplot() + geom_point(position = position_jitter(height = 0)) + theme_classic() + coord_flip() + labs(x = "", y = "# of bins passing QC") + guides(fill="none") + theme(axis.text = element_text(size = 10), axis.title = element_text(size = 12, face = "bold"))
+remove_boxplot_outliers(ggplotly(gp))
+```
+
+## table
+
+```{r}
+datatable(qc_summary_list, rownames = TRUE)
+```
+
+# {-}

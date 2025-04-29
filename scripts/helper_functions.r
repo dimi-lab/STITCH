@@ -17,6 +17,130 @@ remove_object <- function(object_name){
 #' @param secondary_output Character. Path to secondary output. Default is NULL.
 #' @param stage Character. Either "QC" or "loader", indicating it is QC or loader step. Default is "QC".
 #' @param workflowpath Character. Full path to workflow directory. Default is NULL.
+#' @param binsize bin size to read in. Default is NULL.
+#' @param adaptive_cutoff_flag Character 0 or 1 to indicate whether to apply adaptive cutoff identification (based on IQR). Default is NULL.
+#' @param nCount_cutoff Double. Cutoff for the total number of UMI counts. Default is 200.
+#' @param nFeature_cutoff Double. Cutoff for the total number of detectable genes/features. Default is 50.
+#' @param mt_cutoff Double. Cutoff for the percentage of mitochondria concentration, e.g., 40 indicates 40%. Default is 40.
+#' @param hb_cutoff Double. Cutoff for the percentage of hemoglobin concentration, e.g., 20 indicates 20%. Default is 20.
+#' @param nCell_cutoff Double. Cutoff for the number of cells with expression for a feature/gene. Default is 10.
+#' @param geneinfo Character. Path to gene-level annotation file. This is used to add feature-level metadata. Only applicable for the 'loader' stage. Default is "NA".
+#' @param cellcycle_correction_flag Character 0 or 1 indicating whether to estimate and correct for cell-cycle effects. If set to 1, also need to specify gene lists for S and G2M phases. Default is "1".
+#' @param genelist_S_phase Character. Path to gene list (Gene Symbols) for cell-cycle S-phase, one gene per line. Default is "NA".
+#' @param genelist_G2M_phase Character. Path to gene list (Gene Symbols) for cell-cycle G2M-phase, one gene per line. Default is "NA".
+#' @param min_median_umi Character. Path to min_median_umi file. Default is "NA".
+#' @param norm_dimreduc Character. normalization method for dimension reduction. Default is "NA".
+#' @param norm_diff Character. normalization method for differential testin. Default is "NA".
+#' @return seurat object
+
+qcsample_VisiumHD <- function(
+    sampleid = NULL,
+    condition = NULL,
+    secondary_output = NULL,
+    stage = "QC",
+    workflowpath = NULL,
+    binsize = NULL,
+    adaptive_cutoff_flag = NULL,
+    nCount_cutoff = 200,
+    nFeature_cutoff = 50,
+    mt_cutoff = 40,
+    hb_cutoff = 20,
+    nCell_cutoff = 10,
+    geneinfo = "NA",
+    cellcycle_correction_flag = "1",
+    genelist_S_phase = "NA",
+    genelist_G2M_phase = "NA",
+    min_median_umi = "NA",
+    norm_dimreduc = "NA",
+    norm_diff = "NA"
+) {
+  sampleinfo <- data.frame(sampleid = sampleid, condition = condition, secondary_output = secondary_output)
+  
+  seurat_obj <- Load10X_Spatial(data.dir = sampleinfo$secondary_output, slice = sampleid, bin.size = as.integer(binsize))
+  metadata <- sampleinfo[rep(1,ncol(seurat_obj)),]
+  rownames(metadata) <- colnames(seurat_obj)
+  seurat_obj <- AddMetaData(seurat_obj, metadata)
+  
+  message(paste0("calculate mt percent for sample "),sampleid)
+  seurat_obj[["percent.mt"]] <- PercentageFeatureSet(object = seurat_obj, pattern = "^MT-|^mt-")
+  message(paste0("calculate HB percent for sample "),sampleid)
+  seurat_obj[["percent.hb"]] <- PercentageFeatureSet(object = seurat_obj, pattern = "^HB.*|^hb.*")
+  idx_nCount_Spatial <- grep("nCount_Spatial", colnames(seurat_obj@meta.data))
+  idx_nFeature_Spatial <- grep("nFeature_Spatial", colnames(seurat_obj@meta.data))
+  assay <- Assays(seurat_obj)
+  if(stage == "QC") {
+    write.table(data.frame(sampleid = seurat_obj$sampleid,
+                           barcode = colnames(seurat_obj),
+                           nCount_Spatial = seurat_obj@meta.data[,idx_nCount_Spatial],
+                           nFeature_Spatial = seurat_obj@meta.data[,idx_nFeature_Spatial],
+                           percent.mt = seurat_obj$percent.mt,
+                           percent.hb = seurat_obj$percent.hb),paste0(sampleid,'_qc_metrics_cells.txt'),sep='\t',row.names=FALSE,col.names=TRUE,quote=F)}
+  if(adaptive_cutoff_flag == "1"){
+    nCount_cutoff <- max(nCount_cutoff,loweroutlier_IQR(seurat_obj@meta.data[,idx_nCount_Spatial]))
+    nFeature_cutoff <- max(nFeature_cutoff,loweroutlier_IQR(seurat_obj@meta.data[,idx_nFeature_Spatial]))
+    mt_cutoff <- min(mt_cutoff,higheroutlier_IQR(seurat_obj$percent.mt))
+    hb_cutoff <- min(hb_cutoff,higheroutlier_IQR(seurat_obj$percent.hb))
+  }
+  idx <- which(seurat_obj@meta.data[,idx_nCount_Spatial] >= nCount_cutoff & seurat_obj@meta.data[,idx_nFeature_Spatial] >= nFeature_cutoff & seurat_obj$percent.mt <= mt_cutoff & seurat_obj$percent.hb <= hb_cutoff)
+  gene_summary <- data.frame(GeneName = rownames(seurat_obj),
+                             nCell = apply(GetAssayData(seurat_obj, assay = assay, layer = "counts")[,idx],1,function(i) sum(i>0)))
+  if(stage == "QC") write.table(gene_summary,paste0(sampleid,'_qc_metrics_genes.txt'),sep='\t',row.names=FALSE,col.names=TRUE,quote=F)
+  if(adaptive_cutoff_flag == "1") nCell_cutoff <- max(nCell_cutoff,loweroutlier_IQR(gene_summary$nCell))
+  idx1 <- which(gene_summary$nCell >= nCell_cutoff)
+  if(stage == "QC"){
+    median_umi <- median(apply(GetAssayData(seurat_obj, assay = assay, layer = "counts")[idx1,idx],2,sum))
+    write.table(median_umi,paste0(sampleid,'_median_umi.txt'),sep='\t',row.names=FALSE,col.names=FALSE,quote=F)
+    qc_summary <- data.frame(sampleid = sampleid,
+                             total_bins = ncol(seurat_obj),
+                             nCount_cutoff = sum(seurat_obj@meta.data[,idx_nCount_Spatial] >= nCount_cutoff),
+                             nFeature_cutoff = sum(seurat_obj@meta.data[,idx_nCount_Spatial] >= nCount_cutoff & seurat_obj@meta.data[,idx_nFeature_Spatial] >= nFeature_cutoff),
+                             mt_cutoff = sum(seurat_obj@meta.data[,idx_nCount_Spatial] >= nCount_cutoff & seurat_obj@meta.data[,idx_nFeature_Spatial] >= nFeature_cutoff & seurat_obj$percent.mt <= mt_cutoff),
+                             hb_cutoff = sum(seurat_obj@meta.data[,idx_nCount_Spatial] >= nCount_cutoff & seurat_obj@meta.data[,idx_nFeature_Spatial] >= nFeature_cutoff & seurat_obj$percent.mt <= mt_cutoff & seurat_obj$percent.hb <= hb_cutoff))
+    qc_summary$total_genes <- sum(gene_summary$nCell >= nCell_cutoff)
+    write.table(qc_summary,paste0(sampleid,'_qc_metrics_summary.txt'),sep='\t',row.names=FALSE,col.names=TRUE,quote=FALSE)
+    write.table(list(sampleid = sampleid, 
+                     nCount_cutoff = nCount_cutoff,
+                     nFeature_cutoff = nFeature_cutoff,
+                     mt_cutoff = mt_cutoff,
+                     hb_cutoff = hb_cutoff,
+                     nCell_cutoff = nCell_cutoff,
+                     adaptive_cutoff_flag = adaptive_cutoff_flag), paste0(sampleid,"_opt_postQC.txt"), row.names = F, col.names = T, sep = "\t", quote = F)
+  } else if(stage == "loader"){
+    seurat_obj <- subset(seurat_obj, cells = idx, features = idx1)
+    message(paste0('predict cell cycle phase for sample ', sampleid))
+    ### use normalize data before cellcyclescoring
+    seurat_obj <- NormalizeData(seurat_obj, normalization.method = "LogNormalize", scale.factor = 10000, assay = assay)
+    seurat_obj <- FindVariableFeatures(seurat_obj, selection.method = "vst", nfeatures = 3000)
+    seurat_obj <- ScaleData(seurat_obj)
+    if(geneinfo != "NA"){
+      gene_metadata <- data.table::fread(geneinfo, header = TRUE,data.table = FALSE)
+      colnames(gene_metadata)[1:2] <- c("gene_id", "gene_name")
+      gene_metadata$gene_name_unique <- make.unique(gene_metadata$gene_name)
+      rownames(gene_metadata) <- gene_metadata$gene_name_unique
+      seurat_obj[[assay]] <- AddMetaData(seurat_obj[[assay]], metadata = gene_metadata)
+    }
+    if(cellcycle_correction_flag == "1") {
+      s.features <- read.delim(genelist_S_phase, header = FALSE)$V1
+      g2m.features <- read.delim(genelist_G2M_phase, header = FALSE)$V1
+      seurat_obj <- CellCycleScoring(seurat_obj, s.features = s.features, g2m.features = g2m.features, set.ident = FALSE)
+      vars.to.regress <- c('percent.mt','Phase')
+    } else  vars.to.regress <- c('percent.mt')
+    if(norm_dimreduc == "SCT" | norm_diff == "SCT"){
+      message(paste0('perform SCTransform for sample ',sampleid))
+      min_median_umi <- read.delim(min_median_umi, header = FALSE)$V1
+      seurat_obj <- SCTransform(seurat_obj, method="glmGamPoi", assay = assay, variable.features.n = 3000,vst.flavor = "v2",vars.to.regress = vars.to.regress,verbose = FALSE,return.only.var.genes = FALSE, scale_factor=min_median_umi)
+      if(geneinfo != "NA") seurat_obj@assays$SCT <- AddMetaData(seurat_obj@assays$SCT, metadata = gene_metadata)
+    }
+    seurat_obj <- AddMetaData(seurat_obj, metadata = GetTissueCoordinates(seurat_obj))
+  }
+  return(seurat_obj)
+}
+
+#' @param sampleid Character. Sample ID. Default is NULL.
+#' @param condition Character. Condition. Default is NULL.
+#' @param secondary_output Character. Path to secondary output. Default is NULL.
+#' @param stage Character. Either "QC" or "loader", indicating it is QC or loader step. Default is "QC".
+#' @param workflowpath Character. Full path to workflow directory. Default is NULL.
 #' @param adaptive_cutoff_flag Character 0 or 1 to indicate whether to apply adaptive cutoff identification (based on IQR). Default is NULL.
 #' @param nCount_cutoff Double. Cutoff for the total number of UMI counts. Default is 200.
 #' @param nFeature_cutoff Double. Cutoff for the total number of detectable genes/features. Default is 50.

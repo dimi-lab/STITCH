@@ -1,0 +1,134 @@
+---
+title: "QC report"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output:
+  rmdformats::readthedown:
+    self_contained: true
+    thumbnails: false
+    lightbox: false
+    gallery: false
+    highlight: tango
+    code_folding: hide
+---
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(message = FALSE, warning = FALSE)
+```
+
+```{r load_library}
+### load libraries
+## use v1.1 for now to avoid error from sctransform
+renv::load(Sys.getenv("PROJECT_DIR"))
+library(matrixStats)
+library(ggplot2)
+library(Seurat)
+library(patchwork)
+options(stringsAsFactors = F, future.globals.maxSize=50*1024^3)
+opt <- params$opt
+```
+
+```{r perform_qc, echo=FALSE}
+source(file.path(opt$workflowpath, "scripts/helper_functions.r"))
+seurat_obj <- qcsample_VisiumHD(
+    sampleid = opt$sampleid,
+    condition = opt$condition,
+    secondary_output = opt$secondary_output,
+    stage = "QC",
+    workflowpath = opt$workflowpath,
+    binsize = opt$binsize,
+    adaptive_cutoff_flag = opt$adaptive_cutoff_flag,
+    nCount_cutoff = opt$nCount_cutoff,
+    nFeature_cutoff = opt$nFeature_cutoff,
+    mt_cutoff = opt$mt_cutoff,
+    hb_cutoff = opt$hb_cutoff,
+    nCell_cutoff = opt$nCell_cutoff,
+)
+```
+
+# QC Steps
+
+1. Identification of bins with low number of total UMI counts (`r opt$nCount_cutoff`)
+2. Identification of bins with low number of detectable features/genes (`r opt$nFeature_cutoff`)
+3. Identification of bins with high percentage of mitochondrial concentration (`r opt$mt_cutoff`), indicating low quality/apoptotic bins
+4. Identification of bins with high percentage of hemoglobin concentration (`r opt$hb_cutoff`), indicating red blood cell contamination
+5. Identification of genes with low number of expressing bins (`r opt$nCell_cutoff`), indicating lowly expressed genes
+
+Adaptive cutoff will be used if enabled. Adaptive cutoff is more stringent, and sample-specific depending on distribution of metrics.
+
+# QC threshold
+
+```{r}
+opt_postQC <- read.delim(paste0(opt$sampleid,"_opt_postQC.txt"), header = TRUE)
+qc_table <- data.frame(metric=c("nCount_cutoff", "nFeature_cutoff","mt_cutoff", "hb_cutoff", "nCell_cutoff","adaptive_cutoff_flag"),
+                       description=c("Cutoff for total number of UMI counts",
+                                     "Cutoff for total number of detectable genes/features",
+                                     "Cutoff for percentage of mitochondria concentration",
+                                     "Cutoff for percentage of hemoglobin concentration",
+                                     "Cutoff for number of bins with expression for feature/gene",
+                                     "0 or 1 to indicate whether to apply adaptive cutoff idenfication based on IQR"),
+                cutoff_suppied=c(opt$nCount_cutoff, opt$nFeature_cutoff, opt$mt_cutoff, opt$hb_cutoff, opt$nCell_cutoff, opt$adaptive_cutoff_flag),
+              cutoff_used=c(opt_postQC$nCount_cutoff, opt_postQC$nFeature_cutoff, opt_postQC$mt_cutoff, opt_postQC$hb_cutoff, opt_postQC$nCell_cutoff, opt_postQC$adaptive_cutoff_flag))
+knitr::kable(qc_table, caption = "A list of QC metrics used")
+```
+
+# Distribution of metrics {.tabset}
+
+## Violin plot
+
+```{r, fig.width=12, fig.height=5}
+cell_metadata <- read.delim(paste0(opt$sampleid,"_qc_metrics_cells.txt"), header = TRUE)
+gps <- lapply(c("nCount_Spatial", "nFeature_Spatial","percent.mt", "percent.hb"), function(i) {
+  ggplot() + geom_violin(aes(x = opt$sampleid, y = cell_metadata[[i]]), fill = "#F8766D") + geom_jitter(aes(x = opt$sampleid, y = cell_metadata[[i]]), size=1, height = 0) + labs(x = "", y = "", title = i) + theme_classic() + theme(plot.title = element_text(face = "bold", hjust = 0.5, size = 12), axis.text.x = element_text(size = 10)) 
+})
+p <- wrap_plots(gps, ncol = 4)
+ggsave('qc_violinplot.png',p,width=12,height=5)
+p
+```
+
+## Scatter plot
+
+```{r, fig.width=12, fig.height=6}
+idx_nCount_Spatial <- grep("nCount_Spatial", colnames(seurat_obj@meta.data))
+idx_nFeature_Spatial <- grep("nFeature_Spatial", colnames(seurat_obj@meta.data))
+plot1 <- ggplot(seurat_obj@meta.data, aes(x = seurat_obj@meta.data[,idx_nCount_Spatial], y = percent.mt)) + geom_point() + theme_classic() + labs(x = "nCount_Spatial")
+plot2 <- ggplot() + geom_point(aes(x = seurat_obj@meta.data[,idx_nCount_Spatial], y = seurat_obj@meta.data[,idx_nFeature_Spatial]), data = seurat_obj@meta.data) + theme_classic() + labs(x = "nCount_Spatial", y = "nFeature_Spatial")
+p <- plot1 + plot2 + plot_layout(ncol=2)
+ggsave("qc_scatterplot.png",p,width=12,height=6)
+p
+```
+
+## Spatial plot
+
+```{r, fig.width=18, fig.height=5}
+idx <- which(seurat_obj@meta.data[,idx_nCount_Spatial] >= opt_postQC$nCount_cutoff & seurat_obj@meta.data[,idx_nFeature_Spatial] >= opt_postQC$nFeature_cutoff & seurat_obj$percent.mt <= opt_postQC$mt_cutoff & seurat_obj$percent.hb <= opt_postQC$hb_cutoff)
+gene_summary <- read.delim(paste0(opt$sampleid,'_qc_metrics_genes.txt'),header = TRUE)
+idx1 <- which(gene_summary$nCell > opt_postQC$nCell_cutoff)
+seurat_obj_filter <- subset(seurat_obj, cells = idx, features = idx1)
+plot1 <- SpatialFeaturePlot(seurat_obj, features = grep("nCount_Spatial", colnames(seurat_obj@meta.data),value =TRUE) ,pt.size.factor = 2) + ggtitle('before filter') + theme(legend.position = "right",plot.title = element_text(hjust = 0.5))
+plot2 <- SpatialFeaturePlot(seurat_obj_filter, features = grep("nCount_Spatial", colnames(seurat_obj@meta.data),value =TRUE) ,pt.size.factor = 2) + ggtitle(paste0('after filter',' bins removed (',ncol(seurat_obj)-length(idx),')',' genes removed (',nrow(seurat_obj)-length(idx1),')')) + theme(legend.position = "right",plot.title = element_text(hjust = 0.5))
+if(length(idx) < ncol(seurat_obj)) cols.highlight <- c("red", "grey") else cols.highlight <- "grey"
+plot3 <- SpatialDimPlot(seurat_obj,cells.highlight = colnames(seurat_obj)[-idx],pt.size.factor = 2, cols.highlight = cols.highlight) + ggtitle('bins removed') + theme(legend.position = "none",plot.title = element_text(hjust = 0.5))
+#p <- CombinePlots(plots = list(plot1, plot2))
+p <- plot1 + plot2 + plot3 + plot_layout(ncol=3)
+ggsave("qc_spatialplot.png",p,width=18,height=5)
+p
+```
+
+# {-}
+
+# Summary
+
+```{r}
+qc_summary <- read.delim(paste0(opt$sampleid,'_qc_metrics_summary.txt'),header = TRUE)
+```
+
+The total number of bins before QC is `r ncol(seurat_obj)`. With defined cutoffs, `r as.numeric(qc_summary[colnames(qc_summary) == "hb_cutoff"])` # of bins pass all cutoffs, and `r format(as.numeric(qc_summary[colnames(qc_summary) == "total_genes"]), scientific = FALSE)` # of genes pass the cutoff. 
+
+```{r, fig.width=12, fig.height=8}
+qc_summary1 <- data.frame(metric = factor(names(qc_summary[-c(1,ncol(qc_summary))]), levels = names(qc_summary)[(length(qc_summary)-1):2]),
+                            value = as.numeric(qc_summary[-c(1,ncol(qc_summary))]))
+gp <- ggplot(aes(x=metric, y = value), data = qc_summary1) + geom_col(aes(fill=metric)) + theme_classic() + geom_text(aes(label = value)) + coord_flip() + labs(x = "", y = "# of bins passing QC") + guides(fill="none") + theme(axis.text = element_text(size = 10), axis.title = element_text(size = 12, face = "bold"))
+ggsave('qc_summary.png',gp,width=12,height=8)
+gp
+```

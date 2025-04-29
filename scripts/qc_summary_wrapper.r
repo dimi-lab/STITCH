@@ -26,7 +26,7 @@ option_list <- list(
 opt_parser <- OptionParser(option_list=option_list)
 opt <- parse_args(opt_parser)
 
-for(i in c("resolution", "mt_cutoff", "hb_cutoff", "nFeature_cutoff", "nCount_cutoff","nCell_cutoff")) opt[[i]] <- as.numeric(opt[[i]])
+for(i in c("resolution", "mt_cutoff", "hb_cutoff", "nFeature_cutoff", "nCount_cutoff","nCell_cutoff","binsize")) opt[[i]] <- as.numeric(opt[[i]])
 
 message("generate QC summary report")
 params <- list(opt = opt)
@@ -37,6 +37,10 @@ if(opt$data_type == 'scRNAseq') {
   file.remove("./QC_report_summary.Rmd")
 } else if(opt$data_type == 'Visium'){
   file.copy(file.path(opt$workflowpath, "/docs/QC_report_Visium_summary.Rmd"), './QC_report_summary.Rmd')
+  rmarkdown::render("./QC_report_summary.Rmd", params = params)
+  file.remove("./QC_report_summary.Rmd")
+} else if(opt$data_type == 'VisiumHD'){
+  file.copy(file.path(opt$workflowpath, "/docs/QC_report_VisiumHD_summary.Rmd"), './QC_report_summary.Rmd')
   rmarkdown::render("./QC_report_summary.Rmd", params = params)
   file.remove("./QC_report_summary.Rmd")
 }

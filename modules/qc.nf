@@ -23,6 +23,7 @@ process RUNQC {
   input:
   val workflowpath
   val data_type
+  val binsize
   val ambient_RNA_removal_flag
   val doublet_removal_flag
   val adaptive_cutoff_flag
@@ -47,7 +48,7 @@ process RUNQC {
 	script:
 	"""
 	export PROJECT_DIR=${projectDir}
-	Rscript ${projectDir}/scripts/qc_sample_wrapper.r --workflowpath $workflowpath --data_type $data_type --ambient_RNA_removal_flag $ambient_RNA_removal_flag --doublet_removal_flag $doublet_removal_flag --adaptive_cutoff_flag $adaptive_cutoff_flag --mt_cutoff $mt_cutoff --hb_cutoff $hb_cutoff --nFeature_cutoff $nFeature_cutoff --nCount_cutoff $nCount_cutoff --nCell_cutoff $nCell_cutoff --sampleid $sampleid --condition $condition --secondary_output $secondary_output
+	Rscript ${projectDir}/scripts/qc_sample_wrapper.r --workflowpath $workflowpath --data_type $data_type --binsize $binsize --ambient_RNA_removal_flag $ambient_RNA_removal_flag --doublet_removal_flag $doublet_removal_flag --adaptive_cutoff_flag $adaptive_cutoff_flag --mt_cutoff $mt_cutoff --hb_cutoff $hb_cutoff --nFeature_cutoff $nFeature_cutoff --nCount_cutoff $nCount_cutoff --nCell_cutoff $nCell_cutoff --sampleid $sampleid --condition $condition --secondary_output $secondary_output
 	"""
 }
 
@@ -98,6 +99,7 @@ process LOADSAMPLE {
   input:
   val workflowpath
   val data_type
+  val binsize
   val ambient_RNA_removal_flag
   val doublet_removal_flag
   val adaptive_cutoff_flag
@@ -121,6 +123,6 @@ process LOADSAMPLE {
 	script:
 	"""
 	export PROJECT_DIR=${projectDir}
-	Rscript ${projectDir}/scripts/data_loader_wrapper.r --workflowpath $workflowpath --data_type $data_type --ambient_RNA_removal_flag $ambient_RNA_removal_flag --doublet_removal_flag $doublet_removal_flag --adaptive_cutoff_flag $adaptive_cutoff_flag --mt_cutoff $mt_cutoff --hb_cutoff $hb_cutoff --nFeature_cutoff $nFeature_cutoff --nCount_cutoff $nCount_cutoff --nCell_cutoff $nCell_cutoff --geneinfo $geneinfo --cellcycle_correction_flag $cellcycle_correction_flag --genelist_S_phase $genelist_S_phase --genelist_G2M_phase $genelist_G2M_phase --min_median_umi $min_median_umi --norm_dimreduc $norm_dimreduc --norm_diff $norm_diff --sampleid $sampleid --condition $condition --secondary_output $secondary_output 
+	Rscript ${projectDir}/scripts/data_loader_wrapper.r --workflowpath $workflowpath --data_type $data_type --binsize $binsize --ambient_RNA_removal_flag $ambient_RNA_removal_flag --doublet_removal_flag $doublet_removal_flag --adaptive_cutoff_flag $adaptive_cutoff_flag --mt_cutoff $mt_cutoff --hb_cutoff $hb_cutoff --nFeature_cutoff $nFeature_cutoff --nCount_cutoff $nCount_cutoff --nCell_cutoff $nCell_cutoff --geneinfo $geneinfo --cellcycle_correction_flag $cellcycle_correction_flag --genelist_S_phase $genelist_S_phase --genelist_G2M_phase $genelist_G2M_phase --min_median_umi $min_median_umi --norm_dimreduc $norm_dimreduc --norm_diff $norm_diff --sampleid $sampleid --condition $condition --secondary_output $secondary_output 
 	"""
 }

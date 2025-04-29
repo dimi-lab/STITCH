@@ -19,6 +19,7 @@ process WRITECONFIGFILE {
   val parallel_strategy
   val nworkers
   val qc_only
+  val binsize
   val ambient_RNA_removal_flag
   val doublet_removal_flag
   val adaptive_cutoff_flag
@@ -91,6 +92,7 @@ process WRITECONFIGFILE {
 
   ## QC
   echo "qc_only=!{qc_only}" >> config.txt
+  echo "binsize=!{binsize}" >> config.txt
   echo "ambient_RNA_removal_flag=!{ambient_RNA_removal_flag}" >> config.txt
   echo "doublet_removal_flag=!{doublet_removal_flag}" >> config.txt
   echo "adaptive_cutoff_flag=!{adaptive_cutoff_flag}" >> config.txt
