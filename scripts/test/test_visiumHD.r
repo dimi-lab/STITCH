@@ -1,7 +1,8 @@
 library(Seurat)
 options(future.globals.maxSize = 500*1024^3,stringsAsFactors = FALSE)
 
-data_dir <- "/research/bsi/projects/PI/tertiary/Ordog_Tamas_m038357/s312975.multi_omics/visiumHD_test/small_intestine/output/"
+## public intestine
+data_dir <- "small_intestine/output/"
 seurat_obj <- Load10X_Spatial(data.dir = data_dir, slice = "SI", bin.size = 8)
 assay <- Assays(seurat_obj)
 sampleinfo <- data.frame(sampleid = "SI", condition = "test", secondary_output = data_dir)

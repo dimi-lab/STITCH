@@ -1,0 +1,208 @@
+// Default configs
+
+params {
+
+  // General
+  // No need to modify
+  workflowpath = "${projectDir}"
+  // Path to samplesheet.tsv file
+  samplesheet = "NA"
+  // author name to add to the final report
+  authorname = "Liu,Leo"
+  // one of scRNAseq, Visium, VisiumHD
+  data_type = "VisiumHD"
+  // Full path to a .txt file containing a list of genes,one gene per line
+  // set to "NA" to disable
+  feature_list = "${projectDir}/testdata/feature_gene.txt"
+  // output directory
+  output_dir = "${projectDir}/output/"
+  // Path to gene level annotation file. This is used to add feature level meta data
+  geneinfo = "${projectDir}/docs/human_gene_info_2020A.tsv"
+  
+  // Parallel parameters 
+  // Used by DECONVOLUTION, INTEGRATESAMPLES and MERGESAMPLES
+  // Strategy can be either multisession or multicore
+  parallel_strategy = "multisession"
+  nworkers = 5
+
+  // QC
+  qc_only = true
+  // "0" or "1" to indicate whether to perform ambient RNA removal/correction using SoupX
+  // only applicable to scRNAseq
+  ambient_RNA_removal_flag = "0"
+  // "0" or "1" to indicate whether to perfrom doublet removal using scDblFinder
+  // only applicable to scRNAseq  
+  doublet_removal_flag = "0"
+  // "0" or "1" to indicate whether to apply adaptive cutoff idenfication (based on IQR)
+  adaptive_cutoff_flag = "0"
+  // Cutoff for percentage of mitochondria concentration
+  // cells with values higher than the cutoff will be removed
+  mt_cutoff = 40
+  // Cutoff for percentage of hemoglobin concentration
+  // cells with values higher than the cutoff will be removed
+  hb_cutoff = 20
+  // Cutoff for total number of detectable genes/features
+  // cells with values lower than the cutoff will be removed
+  nFeature_cutoff = 10
+  // Cutoff for total number of UMI counts
+  // cells with values lower than the cutoff will be removed
+  nCount_cutoff = 30
+  // Cutoff for number of cells with expression for feature/gene
+  // genes/features with values lower than the cutoff will be removed
+  nCell_cutoff = 10
+
+  // Normalization
+  // normalization method for dimension reduction and clustering, either SCT or LogNormalize
+  norm_dimreduc = "LogNormalize"
+  // normalization method for differential testing, either SCT or LogNormalize
+  norm_diff = "LogNormalize"
+  // cell-cyle 
+  // "0" or "1" to indicate whether to estimate and correct for cell-cycle effect.
+  cellcycle_correction_flag = "1"
+  // path to gene list (Gene symbols) for cell-cycle S-phase, one gene per line
+  // required if cellcycle_correction is set to "1"
+  genelist_S_phase = "${projectDir}/docs/S_genes_human.tsv"
+  // path to gene list (gene symbols) for cell-cycle G2M-phase, one gene per line
+  // required if cellcycle_correction is set to "1"
+  genelist_G2M_phase = "${projectDir}/docs/G2M_genes_human.tsv"
+
+  // Analysis to identify spatially variable genes (SVGs)
+  // Only applicable to spatial data
+  svg_analysis = false
+  // Method to use for SVG idenfication, either markvariogram or moransi
+  svg_method = "moransi"
+
+  // Deconvolution-analysis parameters
+  // Deconvlution analysis is recommended for spatial data
+  // Deconvolution is performed using spacexr/RCTD
+  deconvolution_analysis = false
+  // Path to reference seurat object in .rds format
+  reference_deconvolution = "NA"
+  // Assay of the reference used for deconvolution
+  reference_assay_deconvolution = "RNA"
+  // Assay of the query used for deconvolution
+  query_assay_deconvolution = "Spatial.008um"
+  // Character indicating reference data, e.g. cell type, to use for deconvolution
+  refdata_deconvolution = "NA"
+  // doublet mode for RCTD, can be either doublet, multi or full
+  doublet_mode = "doublet"
+  // optional gene list used for deconvolution, one gene per line
+  // set to "NA" to use default strategy used by RCTD
+  gene_list_reg = "NA"  
+
+  // Mapping-analysis parameters
+  // Mapping analysis is recommended for scRNAseq data
+  // Mapping is performed using transfer anchors from Seurat
+  mapping_analysis = false
+  // Path to reference seurat object in .rds format
+  reference_mapping = "NA"
+  // Assay to use to perform mapping for reference
+  reference_assay_mapping = "RNA"
+  // Assay to use to perform mapping for query
+  query_assay_mapping = "RNA"
+  // Character or characters seperated by ',' indicating reference data to use for mapping
+  refdata_mapping = "NA"
+  // Name of dimensional reduction to use from the reference
+  reference_reduction = "pca"
+  // Name of normalization method used: LogNormalize or SCT
+  // SCT assay for integrated reference is currently not compatible
+  normalization_method = "LogNormalize"
+  // 0 or 1 indicating whether to add prediction assay to the seurat object
+  prediction_assay = "1"
+  // DimReduc object to use from the reference data to project UMAP
+  reduction_model = "umap"
+
+  // Analysis strategy
+  // "0" or "1" indicating whether to perform merge-based analysis
+  merge_analysis = false
+  // "0" or "1" indicating whether to perform integration-based analysis
+  integration_analysis = true
+  // if merge_analysis is enabled, whether to stop after merge-based analysis. Could be useful if you want to evaluate parameters like resolution.
+  merge_only = false
+  // if integration_analysis is enabled, whether to stop after integration-based analysis. Could be useful if you want to evaluate parameters like resolution.
+  integration_only = false
+
+  // Integration strategy
+  // cca, rpca, harmony, fastmnn, or scvi
+  integration_method = "harmony"
+  // "0" or "1" to indicate whether to perform sketch-based workflow
+  sketch_flag = "0"
+
+  // Clustering
+  // Resolution parameter used to identify number of clusters
+  resolution = 0.8
+  // Method used for visualization, either tsne or umap
+  vismethod = "umap"
+  // method for spatial clustering, Banksy or Seurat
+  // only applicable to spatial data
+  spatial_cluster = "Banksy"
+  // lambda parameter for Banksy, larger values yield more spatially coherent domains. For Visuim, recommend to use 0.2 for domain segmentation. For Visuim HD, use 0.2 for cell typing, and 0.8 for domain segmentation
+  // only applicable to spatial data
+  lambda = 0.2
+  // k_geom parameter for Banksy, larger values will yield larger domains. Recommend to use 18 for Visium data
+  // only applicable to spatial data
+  k_geom = 50
+
+  // Differential expression
+  // 0 or 1 indicating whether to perform pseudo-bulk
+  // based analysis. Could be helpful if there are many samples per condition
+  pseudobulk_flag = "0"
+  // Character value specifying control group for differential expression analysis
+  // Set to NA to disable
+  control_var = "Control"
+  // Character value specifying case group for differential expression analysis
+  // Set to NA to disable
+  case_var = "Case"
+  // Covariates to adjust, when performing differential analysis between conditions
+  // values should be from column names from sampleinfo file
+  // e.g, if sampleinfo file contains information for 'age' and 'gender',
+  // and you want to correct for age and gender effects, you can specify
+  // covariate_list = "age,gender"
+  // note that if covariate_list is set, you will need to choose one of 
+  // LR, negbinom, poisson or MAST as method for statistical test. 
+  covariate_list = "NA"
+  // Denotes which statistical test to use
+  // refer to FindMarkers function for more details
+  // if pseudobulk is enabled, recommend to use tests designed for bulk
+  // analysis, e.g. DESeq2, edgeR, limma, etc.
+  test = "wilcox"
+  // fold change cutoff to identify differentially expressed genes
+  fc = 2
+  // p value cutoff to identify differentially expressed genes
+  pval = 0.01
+  // "0" or "1" to indicate whether to use Bonferroni adjusted p value
+  pval_flag = "1"
+  // percentage of experssion cutoff to identify differentially expressed genes
+  // require at least one of the group (e.g. control or case)
+  // to have percentage of cells expressing a gene above specified value.
+  pct=20
+}
+
+
+profiles {
+    // Default profile (local execution)
+    local {
+      process.executor = 'local'
+      process.memory = '100Gb'
+      process.INTEGRATESAMPLES.memory = '200G'
+      workDir = './work'
+    }     
+
+    // SLURM execution profile
+    slurm {
+      process.executor = 'slurm'
+      process.queue = 'cpu-short'
+      //process.memory = '100Gb'
+      //process.INTEGRATESAMPLES.memory = '200G'
+      process.clusterOptions = '--cpus-per-task 10  --mem 200G'
+      process.time = '6h'
+      workDir = './work'
+    }
+}
+
+manifest {
+    name = 'STITCH'
+    author = 'Yuanhang Liu'
+    description = 'A nextflow pipeline for scRNA-seq and Visium data analysis'
+    version = '1.0.0'
+}

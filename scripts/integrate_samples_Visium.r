@@ -64,7 +64,7 @@ if(opt$cellcycle_correction_flag == "1"){
   object.features <- setdiff(object.features,c(s.features, g2m.features))
 }
 
-assay <- ifelse(opt$norm_dimreduc == "SCT", "SCT", "Spatial")
+assay <- ifelse(opt$norm_dimreduc == "SCT", "SCT", grep("Spatial", Assays(object.list[[1]]), value = TRUE))
 integrated_obj <- merge(object.list[[1]], y = object.list[2:length(object.list)],  merge.data = TRUE)
 DefaultAssay(integrated_obj) <- assay
 remove_object("object.list")
@@ -77,7 +77,7 @@ if(opt$norm_dimreduc == "LogNormalize"){
 method_list <- data.frame(name = c("cca", "rpca", "harmony", "fastmnn", "scvi"),
                           function_name = c("CCAIntegration", "RPCAIntegration", "HarmonyIntegration", "FastMNNIntegration", "scVIIntegration"))
 if(opt$spatial_cluster == "Banksy"){
-  if(assay == "Spatial") integrated_obj[[assay]] <- JoinLayers(integrated_obj[[assay]])
+  if(length(grep("Spatial", assay))) integrated_obj[[assay]] <- JoinLayers(integrated_obj[[assay]])
   integrated_obj <- RunBanksy(integrated_obj, lambda = opt$lambda, assay = assay, slot = 'data', features = 'variable',group = 'sampleid', split.scale = FALSE, k_geom = opt$k_geom, dimx = 'x', dimy = 'y')
   integrated_obj <- RunPCA(integrated_obj, assay = 'BANKSY', npcs = 30, features = VariableFeatures(integrated_obj, assay = assay))
   integrated_obj[[assay]] <- split(integrated_obj[[assay]], f = integrated_obj$sampleid)

@@ -73,7 +73,7 @@ if(opt$data_type == 'scRNAseq') {
   }
 }
 
-if(opt$data_type == 'Visium') {
+if(opt$data_type %in% c('Visium', 'VisiumHD')) {
   if(opt$sketch_flag == "0"){
     command <- paste("Rscript", file.path(opt$workflowpath,"/scripts/integrate_samples_Visium.r"),
                      "--samplesheet", opt$samplesheet,
