@@ -45,7 +45,7 @@ if(opt$sketch_flag == "1" & opt$pseudobulk_flag == "0"){
   }
   }
 
-selectedclusters <- as.numeric(which(!apply(table(condition, seurat_clusters),2,function(i) any(i==0)))-1)
+selectedclusters <- as.numeric(which(!apply(table(condition, seurat_clusters),2,function(i) any(i < 3)))-1)
 if(length(unique(condition))==1 | (!opt$clusternum %in% selectedclusters)){
   message(paste0("perform marker gene identification for cluster ", opt$clusternum))
   command <- paste('Rscript', file.path(opt$workflowpath,'scripts/find_markers.r'),

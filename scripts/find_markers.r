@@ -44,10 +44,10 @@ if((!"covariate.list" %in% names(opt)) || (opt$covariate.list == "NA")) covariat
 seurat_obj[[opt$assay]] <- JoinLayers(seurat_obj[[opt$assay]])
 
 if(opt$group.var == "NA"){
-  clusterout <- FindMarkers(seurat_obj, ident.1 = opt$ident.1, ident.2 = ident.2, verbose = TRUE,min.cells.group=1,min.pct=0,min.cells.feature=0,logfc.threshold=0,assay = opt$assay,slot='data', latent.vars = covariate.list, test.use = opt$test.use)
+  clusterout <- FindMarkers(seurat_obj, ident.1 = opt$ident.1, ident.2 = ident.2, verbose = TRUE,min.cells.group=3,min.pct=0,min.cells.feature=0,logfc.threshold=0,assay = opt$assay,slot='data', latent.vars = covariate.list, test.use = opt$test.use)
 } else {
   ## use default function for now
-  clusterout <- FindConservedMarkers(seurat_obj, ident.1 = opt$ident.1, grouping.var = opt$group.var, verbose = TRUE,min.cells.group=1,min.pct=0,min.cells.feature=0,logfc.threshold=0,assay = opt$assay,slot = 'data',latent.vars = covariate.list, test.use = opt$test.use)
-  #clusterout <- FindConservedMarkers_fix(seurat_obj, ident.1 = opt$ident.1, grouping.var = opt$group.var, verbose = TRUE,min.cells.group=1,min.pct=0,min.cells.feature=0,logfc.threshold=0,assay = 'SCT',slot = 'data',latent.vars = covariate.list, test.use = opt$test.use)
+  clusterout <- FindConservedMarkers(seurat_obj, ident.1 = opt$ident.1, grouping.var = opt$group.var, verbose = TRUE,min.cells.group=3,min.pct=0,min.cells.feature=0,logfc.threshold=0,assay = opt$assay,slot = 'data',latent.vars = covariate.list, test.use = opt$test.use)
+  #clusterout <- FindConservedMarkers_fix(seurat_obj, ident.1 = opt$ident.1, grouping.var = opt$group.var, verbose = TRUE,min.cells.group=3,min.pct=0,min.cells.feature=0,logfc.threshold=0,assay = 'SCT',slot = 'data',latent.vars = covariate.list, test.use = opt$test.use)
 }
 write.table(clusterout,file=opt$outputfile,sep='\t',row.names=T,col.names=T,quote=FALSE)
