@@ -117,7 +117,7 @@ process INTEGRATESAMPLES {
 	script:
 	"""
   export PROJECT_DIR=${projectDir}
-	Rscript ${projectDir}/scripts/integrate_samples_wrapper.r --workflowpath $workflowpath --samplesheet $samplesheet --data_type $data_type --resolution $resolution --geneinfo $geneinfo --cellcycle_correction_flag $cellcycle_correction_flag --genelist_S_phase $genelist_S_phase --genelist_G2M_phase $genelist_G2M_phase --integration_method $integration_method --sketch_flag $sketch_flag --norm_dimreduc $norm_dimreduc --spatial_cluster $spatial_cluster --lambda $lambda --k_geom $k_geom --parallel_strategy $parallel_strategy --nworkers $nworkers
+	Rscript ${workflowpath}/scripts/integrate_samples_wrapper.r --workflowpath $workflowpath --samplesheet $samplesheet --data_type $data_type --resolution $resolution --geneinfo $geneinfo --cellcycle_correction_flag $cellcycle_correction_flag --genelist_S_phase $genelist_S_phase --genelist_G2M_phase $genelist_G2M_phase --integration_method $integration_method --sketch_flag $sketch_flag --norm_dimreduc $norm_dimreduc --spatial_cluster $spatial_cluster --lambda $lambda --k_geom $k_geom --parallel_strategy $parallel_strategy --nworkers $nworkers
 	"""
 }
 
@@ -169,7 +169,7 @@ process FINDMARKERS {
 	script:
 	"""
   export PROJECT_DIR=${projectDir}
-	Rscript ${projectDir}/scripts/find_markers_wrapper.r --workflowpath $workflowpath --data_type $data_type --pseudobulk_flag $pseudobulk_flag --control_var $control_var --case_var $case_var --covariate_list $covariate_list --test $test --sketch_flag $sketch_flag --norm_diff $norm_diff --seurat_obj $integrated_obj --seurat_clusters_condition $seurat_clusters_condition --clusternum ${clusternum}
+	Rscript ${workflowpath}/scripts/find_markers_wrapper.r --workflowpath $workflowpath --data_type $data_type --pseudobulk_flag $pseudobulk_flag --control_var $control_var --case_var $case_var --covariate_list $covariate_list --test $test --sketch_flag $sketch_flag --norm_diff $norm_diff --seurat_obj $integrated_obj --seurat_clusters_condition $seurat_clusters_condition --clusternum ${clusternum}
 	"""
 }
 
@@ -203,7 +203,7 @@ process COMBINETABLES {
 	script:
 	"""
   export PROJECT_DIR=${projectDir}
-	Rscript ${projectDir}/scripts/combine_tables_wrapper.r --workflowpath $workflowpath --geneinfo $geneinfo --fc $fc --pval $pval --pval_flag $pval_flag --pct $pct
+	Rscript ${workflowpath}/scripts/combine_tables_wrapper.r --workflowpath $workflowpath --geneinfo $geneinfo --fc $fc --pval $pval --pval_flag $pval_flag --pct $pct
 	"""
 }
 
@@ -259,7 +259,7 @@ process FINALREPORT {
 	script:
 	"""
   export PROJECT_DIR=${projectDir}
-	Rscript ${projectDir}/scripts/final_report_wrapper.r --workflowpath $workflowpath --data_type $data_type --authorname $authorname --samplesheet $samplesheet --sketch_flag $sketch_flag --feature_list $feature_list --cellcycle_correction_flag $cellcycle_correction_flag --vismethod $vismethod --seurat_obj $seurat_obj --marker_gene_filtered $marker_gene_filtered --diff_gene_filtered $diff_gene_filtered
+	Rscript ${workflowpath}/scripts/final_report_wrapper.r --workflowpath $workflowpath --data_type $data_type --authorname $authorname --samplesheet $samplesheet --sketch_flag $sketch_flag --feature_list $feature_list --cellcycle_correction_flag $cellcycle_correction_flag --vismethod $vismethod --seurat_obj $seurat_obj --marker_gene_filtered $marker_gene_filtered --diff_gene_filtered $diff_gene_filtered
 	"""
 }
 
@@ -299,6 +299,6 @@ process MERGESAMPLES {
 	script:
 	"""
   export PROJECT_DIR=${projectDir}
-	Rscript ${projectDir}/scripts/merge_samples_wrapper.r --workflowpath $workflowpath --samplesheet $samplesheet --data_type $data_type --resolution $resolution --geneinfo $geneinfo --cellcycle_correction_flag $cellcycle_correction_flag --genelist_S_phase $genelist_S_phase --genelist_G2M_phase $genelist_G2M_phase --sketch_flag $sketch_flag --norm_dimreduc $norm_dimreduc --spatial_cluster $spatial_cluster --lambda $lambda --k_geom $k_geom --parallel_strategy $parallel_strategy --nworkers $nworkers
+	Rscript ${workflowpath}/scripts/merge_samples_wrapper.r --workflowpath $workflowpath --samplesheet $samplesheet --data_type $data_type --resolution $resolution --geneinfo $geneinfo --cellcycle_correction_flag $cellcycle_correction_flag --genelist_S_phase $genelist_S_phase --genelist_G2M_phase $genelist_G2M_phase --sketch_flag $sketch_flag --norm_dimreduc $norm_dimreduc --spatial_cluster $spatial_cluster --lambda $lambda --k_geom $k_geom --parallel_strategy $parallel_strategy --nworkers $nworkers
 	"""
 }
