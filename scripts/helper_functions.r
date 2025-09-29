@@ -349,6 +349,7 @@ qcsample_scRNAseq <- function(
     remove_object(c("sc", "toc"))
     seurat_obj <- CreateSeuratObject(counts=out, project=sampleid,meta.data = as.data.frame(meta.data),min.cells=0,min.features=0)
     seurat_obj[["soupX.rho"]] <- rho
+    remove_object(c("out"))
   } else {
     seurat_obj <- CreateSeuratObject(counts=toc, project=sampleid,meta.data = as.data.frame(meta.data),min.cells=0,min.features=0)
     remove_object("toc")
@@ -356,7 +357,7 @@ qcsample_scRNAseq <- function(
   remove_object("meta.data")
   if(stage == "QC" | (stage == "loader" & doublet_removal_flag == "1")){
     message("perform doublet detection using scDblFinder")
-    if(length(unique(clusters)) ==1) sce <- scDblFinder(out, cluster = 2) else sce <- scDblFinder(out, clusters=clusters)
+    if(length(unique(clusters)) ==1) sce <- scDblFinder(GetAssayData(seurat_obj, assay = "RNA",layer = "count"), cluster = 2) else sce <- scDblFinder(GetAssayData(seurat_obj, assay = "RNA",layer = "count"), clusters=clusters)
     seurat_obj[["scDblFinder.score"]] <- sce$scDblFinder.score
     seurat_obj[["scDblFinder.class"]] <- sce$scDblFinder.class
   }
